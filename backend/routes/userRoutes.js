@@ -145,31 +145,39 @@ router.get('/profile', protect, async (req, res) => {
   // Rota para listar profissionais com filtros
   router.get('/professionals', protect, async (req, res) => {
     try {
-      const { specialty, location, averageRating } = req.query;
+      const { specialty, location, averageRatingMin, averageRatingMax } = req.query;
   
-      let query = { type: 'professional' }; // Garante que apenas profissionais sejam retornados
+      // Criar a query com filtros opcionais
+      let query = { type: 'professional' }; // Garante que estamos buscando apenas profissionais
   
       // Filtro por especialidade
       if (specialty) {
         query.specialties = { $in: [specialty] };
       }
   
-      // Filtro por localização (necessário que o campo location esteja no esquema de User)
+      // Filtro por localização
       if (location) {
-        query.location = location; 
+        query['location'] = location; // Usar diretamente o campo location para profissionais
       }
   
-      // Filtro por avaliação média
-      if (averageRating) {
-        query.averageRating = { $gte: averageRating };
+      // Filtro por intervalo de avaliação média
+      if (averageRatingMin && averageRatingMax) {
+        query.averageRating = { $gte: averageRatingMin, $lte: averageRatingMax };
+      } else if (averageRatingMin) {
+        query.averageRating = { $gte: averageRatingMin };
+      } else if (averageRatingMax) {
+        query.averageRating = { $lte: averageRatingMax };
       }
   
-      const professionals = await User.find(query);
+      // Executar a consulta
+      const professionals = await User.find(query)
+        .select('name specialties averageRating location') // Selecionar os campos relevantes
+        .exec();
   
       res.json(professionals);
     } catch (error) {
-      console.error('Error fetching professionals:', error);
-      res.status(500).json({ message: 'Error fetching professionals', error: error.message });
+      console.error('Erro ao buscar profissionais:', error);
+      res.status(500).json({ message: 'Erro ao buscar profissionais', error: error.message });
     }
   });
   

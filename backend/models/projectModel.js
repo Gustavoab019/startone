@@ -10,11 +10,13 @@ const projectSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    professional: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
+    professionals: [ // Alterado para um array de profissionais
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      }
+    ],
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

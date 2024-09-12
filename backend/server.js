@@ -10,6 +10,8 @@ const recommendationRoutes = require('./routes/recommendationRoutes');
 const rankingRoutes = require('./routes/rankingRoutes');
 const companyPanelRoutes = require('./routes/companyPanelRoutes');
 const companyRoutes = require('./routes/companyRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+
 
 dotenv.config();
 
@@ -42,3 +44,4 @@ app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/rankings', rankingRoutes);
 app.use('/api/company', companyPanelRoutes);
 app.use('/api/company', companyRoutes);
+app.use('/api/notifications', notificationRoutes);
