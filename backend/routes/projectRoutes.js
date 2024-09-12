@@ -9,21 +9,26 @@ router.post('/', protect, async (req, res) => {
   const { projectTitle, description, professionals, company, client, completionDate } = req.body;
 
   try {
-    console.log('Criando projeto com os seguintes dados:', req.body); // Log dos dados recebidos
+    // Validação para garantir que os campos obrigatórios estão preenchidos
+    if (!projectTitle || !description) {
+      return res.status(400).json({ message: 'Campos obrigatórios ausentes: projectTitle, description.' });
+    }
+
+    console.log('Criando projeto com os seguintes dados:', req.body);
 
     const project = new Project({
       projectTitle,
       description,
-      professionals: professionals || [req.user._id], // Array de IDs de profissionais
+      professionals: professionals || [req.user._id], // Array de IDs de profissionais ou adiciona o criador como padrão
       company,
       client,
       completionDate,
     });
 
     const createdProject = await project.save();
-    console.log('Projeto criado com sucesso:', createdProject); // Verifica se o projeto foi criado com sucesso
+    console.log('Projeto criado com sucesso:', createdProject);
 
-    // Verificar se o campo "professionals" existe e é um array
+    // Criar notificações para os profissionais envolvidos
     if (Array.isArray(createdProject.professionals) && createdProject.professionals.length > 0) {
       console.log('Criando notificações para os seguintes profissionais:', createdProject.professionals);
 
@@ -45,8 +50,7 @@ router.post('/', protect, async (req, res) => {
     console.error('Erro ao criar o projeto:', error);  // Mostrar erro no console
     res.status(400).json({ message: 'Erro ao criar o projeto', error: error.message });
   }
-})
-
+});
 
 // Rota para listar projetos
 router.get('/', protect, async (req, res) => {
@@ -89,7 +93,7 @@ router.put('/:id/status', protect, async (req, res) => {
       for (const professional of project.professionals) {
         await Notification.create({
           user: professional,
-          message: `O status do projeto ${project.projectTitle} foi alterado para ${project.status}.`,
+          message: `O status do projeto "${project.projectTitle}" foi alterado para "${project.status}".`,
           link: `/projects/${project._id}`,
         });
         console.log(`Notificação criada para o profissional ${professional}`);
@@ -102,6 +106,5 @@ router.put('/:id/status', protect, async (req, res) => {
     res.status(500).json({ message: 'Erro ao atualizar o status do projeto', error: error.message });
   }
 });
-
 
 module.exports = router;
