@@ -1,46 +1,49 @@
 const mongoose = require('mongoose');
 
+// Definição do schema para projetos
 const projectSchema = mongoose.Schema(
   {
     projectTitle: {
       type: String,
-      required: true,
+      required: true, // Campo obrigatório
     },
     description: {
       type: String,
-      required: true,
+      required: true, // Campo obrigatório
     },
-    professionals: [ // Alterado para um array de profissionais
+    professionals: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-      }
+        ref: 'User', // Referência para o modelo de usuário (profissionais)
+        required: true, // Garantir que pelo menos um profissional seja vinculado
+      },
     ],
     company: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false, // opcional, conforme discutido anteriormente
+      ref: 'User', // Referência para o modelo de empresa (opcional)
+      required: false,
     },
     client: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false, // opcional
+      ref: 'User', // Referência para o modelo de cliente (opcional)
+      required: false,
     },
     completionDate: {
-      type: Date,
-      required: false, // opcional
+      type: Date, // Data de conclusão do projeto
+      required: false, // Opcional
     },
     status: {
       type: String,
-      enum: ['not started', 'in progress', 'completed'], // define os status possíveis
-      default: 'not started', // padrão ao criar um projeto
+      enum: ['not started', 'in progress', 'completed'], // Status possíveis
+      default: 'not started', // Status padrão
     },
   },
   {
-    timestamps: true,
+    timestamps: true, // Cria automaticamente os campos createdAt e updatedAt
   }
 );
 
+// Definição do modelo de Projeto
 const Project = mongoose.model('Project', projectSchema);
+
 module.exports = Project;
