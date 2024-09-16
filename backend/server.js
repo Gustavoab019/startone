@@ -11,6 +11,8 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const companyPanelRoutes = require('./routes/companyPanelRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const cors = require('cors');
+
 
 
 dotenv.config();
@@ -35,6 +37,10 @@ app.listen(PORT, () => {
 });
 
 // Add user routes
+app.use(cors({
+  origin: 'http://localhost:3000',  // Permitir apenas requisições deste domínio
+  credentials: true,  // Se você estiver usando cookies para autenticação
+}));
 app.use('/api/users', userRoutes);
 app.use('/api/evaluations', evaluationRoutes);
 app.use('/api/projects', projectRoutes);
