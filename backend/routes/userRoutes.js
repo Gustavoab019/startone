@@ -6,13 +6,16 @@ const User = require('../models/userModel');
 const { protect } = require('../middlewares/authMiddleware');
 const { check, validationResult } = require('express-validator');
 
-// Rota para registro de usuário
-router.post('/register', [
+// Middleware de validação para registro
+const validateRegister = [
   check('name', 'Name is required').not().isEmpty(),
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
-  check('type', 'User type is required').not().isEmpty(),
-], async (req, res) => {
+  check('type', 'User type is required').not().isEmpty()
+];
+
+// Rota para registro de usuário com validação
+router.post('/register', validateRegister, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -64,8 +67,19 @@ router.post('/register', [
   }
 });
 
-// Route for user login
-router.post('/login', async (req, res) => {
+// Middleware de validação para login
+const validateLogin = [
+  check('email', 'Please include a valid email').isEmail(),
+  check('password', 'Password is required').exists()
+];
+
+// Rota para login do usuário com validação
+router.post('/login', validateLogin, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { email, password } = req.body;
 
   try {
@@ -90,68 +104,67 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Rota protegida para obter o perfil do usuário autenticado
-router.get('/profile', protect, async (req, res) => {
-  const user = await User.findById(req.user._id).select('-password');
+// Middleware de validação para atualizar o perfil
+const validateUpdateProfile = [
+  check('email', 'Please include a valid email').optional().isEmail(),
+  check('name', 'Name cannot be empty').optional().not().isEmpty(),
+  check('specialties', 'Specialties cannot be empty').optional().not().isEmpty(),
+  check('experienceYears', 'Experience must be a number').optional().isNumeric(),
+];
 
-  if (user) {
-    res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      type: user.type,
-      specialties: user.specialties,
-      experienceYears: user.experienceYears,
-      certifications: user.certifications,
-      portfolio: user.portfolio,
-      companyDetails: user.companyDetails
-    });
-  } else {
-    res.status(404).json({ message: 'User not found' });
+// Rota protegida para atualizar o perfil do usuário
+router.put('/profile', protect, validateUpdateProfile, async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
   }
-});
 
-// Atualização de perfil
-router.put('/profile', protect, async (req, res) => {
-  const user = await User.findById(req.user._id);
+  try {
+    const user = await User.findById(req.user._id);
 
-  if (user) {
-    user.name = req.body.name || user.name;
-    user.email = req.body.email || user.email;
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
 
-    // Atualiza campos específicos de profissionais
-    if (user.type === 'professional') {
-      user.specialties = req.body.specialties || user.specialties;
-      user.experienceYears = req.body.experienceYears || user.experienceYears;
-      user.certifications = req.body.certifications || user.certifications;
-      user.portfolio = req.body.portfolio || user.portfolio;
-      user.location = req.body.location || user.location;
+      // Atualiza campos específicos de profissionais
+      if (user.type === 'professional') {
+        user.specialties = req.body.specialties || user.specialties;
+        user.experienceYears = req.body.experienceYears || user.experienceYears;
+        user.certifications = req.body.certifications || user.certifications;
+        user.portfolio = req.body.portfolio || user.portfolio;
+        user.location = req.body.location || user.location; // Atualizar o campo location também
+      }
+
+      // Atualiza campos específicos de empresas
+      if (user.type === 'company') {
+        user.companyDetails = req.body.companyDetails || user.companyDetails;
+      }
+
+      // Atualiza a senha, se for enviada
+      if (req.body.password) {
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(req.body.password, salt);
+      }
+
+      const updatedUser = await user.save();
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        type: updatedUser.type,
+        specialties: updatedUser.specialties,
+        experienceYears: updatedUser.experienceYears,
+        certifications: updatedUser.certifications,
+        portfolio: updatedUser.portfolio,
+        location: updatedUser.location, // Certifique-se de que está retornando a localização
+        companyDetails: updatedUser.companyDetails
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
     }
-
-    // Atualiza campos específicos de empresas
-    if (user.type === 'company') {
-      user.companyDetails = req.body.companyDetails || user.companyDetails;
-    }
-
-    if (req.body.password) {
-      const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(req.body.password, salt);
-    }
-
-    const updatedUser = await user.save();
-    res.json({
-      _id: updatedUser._id,
-      name: updatedUser.name,
-      email: updatedUser.email,
-      type: updatedUser.type,
-      specialties: updatedUser.specialties,
-      experienceYears: updatedUser.experienceYears,
-      certifications: updatedUser.certifications,
-      portfolio: updatedUser.portfolio,
-      companyDetails: updatedUser.companyDetails
-    });
-  } else {
-    res.status(404).json({ message: 'User not found' });
+  } catch (error) {
+    console.error('Error updating profile:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
@@ -191,6 +204,30 @@ router.get('/professionals', protect, async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar profissionais:', error);
     res.status(500).json({ message: 'Erro ao buscar profissionais', error: error.message });
+  }
+});
+
+router.get('/profile', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user) {
+      res.json({
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        type: user.type,
+        specialties: user.specialties,
+        experienceYears: user.experienceYears,
+        certifications: user.certifications,
+        portfolio: user.portfolio,
+        location: user.location,
+        companyDetails: user.companyDetails,
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
