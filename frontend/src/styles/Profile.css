@@ -1,44 +1,192 @@
+/* Estilo principal do container */
 .profile-container {
-    display: flex;
+  display: flex;
+  flex-direction: row;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background-color: #f0f1f6;
+  padding: 20px;
+  border-right: 1px solid #ccc;
+  position: fixed; /* Fixa a sidebar */
+  top: 0;
+  left: 0;
+  height: 100vh; /* Garante que a sidebar cubra toda a altura da janela */
+  overflow-y: auto; /* Adiciona rolagem interna se o conteúdo for grande */
+}
+
+.sidebar nav ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.sidebar nav ul li {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  margin: 10px 0;
+  background-color: #e3e4eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.sidebar nav ul li:hover, .sidebar nav ul li.active {
+  background-color: #d1d3d8;
+}
+
+.sidebar nav ul li .icon {
+  margin-right: 12px;
+}
+
+/* Ajuste do conteúdo principal */
+.profile-main-content {
+  flex-grow: 1;
+  margin-left: 270px; /* Margem para ajustar ao lado da sidebar fixa */
+  padding: 20px;
+  background-color: #fff;
+}
+
+/* Seções do perfil */
+.profile-section {
+  margin-bottom: 30px;
+  max-width: 600px; /* Limita a largura do conteúdo */
+  margin-left: auto; /* Centraliza a seção */
+  margin-right: auto; /* Centraliza a seção */
+}
+
+.profile-section h2, .profile-section h3 {
+  font-size: 1.8em;
+  margin-bottom: 20px;
+}
+
+.profile-section h3 {
+  margin-top: 30px; /* Espaçamento maior entre as seções */
+}
+
+.profile-section h4 {
+  font-size: 1.4em;
+  margin-bottom: 15px;
+}
+
+/* Estilo dos inputs */
+.profile-section input {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Botões */
+.action-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  margin-top: 10px;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+.action-button:active {
+  background-color: #004494;
+}
+
+/* Botão "Add" */
+.add-button {
+  background-color: #28a745;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: background-color 0.3s;
+}
+
+.add-button:hover {
+  background-color: #218838;
+}
+
+/* Estilo dos cartões de certificações e portfólio */
+.certification-cards, .portfolio-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.certification-card, .portfolio-card {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  width: calc(50% - 20px); /* Alinha 2 cards por linha */
+}
+
+.certification-card h4, .portfolio-card h4 {
+  font-size: 1.4em;
+  margin-bottom: 10px;
+}
+
+.certification-card p, .portfolio-card p {
+  margin: 5px 0;
+  color: #555;
+}
+
+/* Mensagens de erro ou sucesso */
+.message {
+  color: red;
+  margin-top: 10px;
+}
+
+/* Tipografia */
+body {
+  font-family: 'Arial', sans-serif;
+}
+
+.profile-section p {
+  color: #555;
+  font-size: 1.1em;
+}
+
+h2, h3 {
+  font-weight: 600;
+  color: #333;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .profile-container {
     flex-direction: column;
-    align-items: center;
-    margin: 20px;
   }
-  
-  h2 {
-    font-size: 24px;
-    margin-bottom: 20px;
-  }
-  
-  form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+
+  .sidebar {
     width: 100%;
-    max-width: 600px;
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    position: relative;
+    height: auto;
+    border-right: none;
   }
-  
-  input {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 16px;
+
+  .profile-main-content {
+    margin-left: 0;
   }
-  
-  button {
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
+
+  .certification-card, .portfolio-card {
+    width: 100%; /* Full-width para telas menores */
   }
-  
-  button:hover {
-    background-color: #45a049;
+
+  .profile-section input {
+    width: 100%; /* Inputs em full-width para telas menores */
   }
-  
+}
