@@ -1,10 +1,21 @@
 const express = require('express');
-const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
+const { body, validationResult } = require('express-validator');
 const User = require('../models/userModel');
+const router = express.Router();
 
 // Rota para adicionar certificações ao perfil do profissional
-router.post('/add', protect, async (req, res) => {
+router.post('/add', [
+  protect,  // Ensure user is authenticated
+  body('name').notEmpty().withMessage('Certification name is required'),
+  body('institution').notEmpty().withMessage('Institution is required'),
+  body('dateObtained').isDate().withMessage('Valid date is required')
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
   const { name, institution, dateObtained } = req.body;
 
   try {
@@ -25,10 +36,13 @@ router.post('/add', protect, async (req, res) => {
     user.certifications.push(newCertification);
     await user.save();
 
-    res.status(201).json({ message: 'Certification added successfully', certifications: user.certifications });
+    res.status(201).json({ 
+      message: 'Certification added successfully', 
+      certifications: user.certifications 
+    });
   } catch (error) {
     console.error('Error adding certification:', error);
-    res.status(400).json({ message: 'Error adding certification', error: error.message });
+    res.status(500).json({ message: 'Error adding certification', error: error.message });
   }
 });
 
