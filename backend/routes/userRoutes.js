@@ -14,6 +14,7 @@ const validateRegister = [
   check('type', 'User type is required').not().isEmpty()
 ];
 
+
 // Rota para registro de usuário com validação
 router.post('/register', validateRegister, async (req, res) => {
   const errors = validationResult(req);
@@ -44,7 +45,7 @@ router.post('/register', validateRegister, async (req, res) => {
       experienceYears: type === 'professional' ? experienceYears : undefined,
       certifications: type === 'professional' ? certifications : undefined,
       portfolio: type === 'professional' ? portfolio : undefined,
-      location: type === 'professional' ? location : undefined, // Adicionando location para profissionais
+      location: type === 'professional' ? location : undefined,
       companyDetails: type === 'company' ? companyDetails : undefined
     });
 
@@ -66,6 +67,7 @@ router.post('/register', validateRegister, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 // Middleware de validação para login
 const validateLogin = [
@@ -103,6 +105,7 @@ router.post('/login', validateLogin, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+ 
 
 // Middleware de validação para atualizar o perfil
 const validateUpdateProfile = [
@@ -222,6 +225,7 @@ router.get('/profile', protect, async (req, res) => {
         portfolio: user.portfolio,
         location: user.location,
         companyDetails: user.companyDetails,
+        averageRating: user.averageRating,
       });
     } else {
       res.status(404).json({ message: 'User not found' });

@@ -1,11 +1,13 @@
 const express = require('express');
+const mongoose = require('mongoose');
+const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
 const Evaluation = require('../models/evaluationModel');
 const User = require('../models/userModel');
 const Notification = require('../models/notificationModel');
 
-// Função para atualizar a média das avaliações do profissional
+// Função para atualizar a média geral das avaliações de um profissional
 async function updateAverageRating(professionalId) {
   const evaluations = await Evaluation.find({ evaluated: professionalId });
 
@@ -14,33 +16,25 @@ async function updateAverageRating(professionalId) {
   }
 
   const totalScore = evaluations.reduce((sum, evaluation) => {
-    const qualityOfWork = evaluation.categories.qualityOfWork || 0;
-    const punctuality = evaluation.categories.punctuality || 0;
-    const communication = evaluation.categories.communication || 0;
-    const safety = evaluation.categories.safety || 0;
-    const problemSolving = evaluation.categories.problemSolving || 0;
+    const { qualityOfWork = 0, punctuality = 0, communication = 0, safety = 0, problemSolving = 0 } = evaluation.categories;
 
-    console.log('Valores de avaliação:', { qualityOfWork, punctuality, communication, safety, problemSolving });
-
-    const averageCategoryScore = 
-      (qualityOfWork + punctuality + communication + safety + problemSolving) / 5;
-
-    console.log('Média da avaliação:', averageCategoryScore);
+    const fieldsCount = [qualityOfWork, punctuality, communication, safety, problemSolving].filter(field => field > 0).length;
+    
+    const averageCategoryScore = fieldsCount > 0 
+      ? (qualityOfWork + punctuality + communication + safety + problemSolving) / fieldsCount 
+      : 0;
 
     return sum + averageCategoryScore;
   }, 0);
 
   const averageRating = totalScore / evaluations.length;
 
-  console.log('Média geral calculada:', averageRating);
-
   await User.findByIdAndUpdate(professionalId, { averageRating });
 
   return averageRating;
 }
 
-
-// Função para calcular as médias das avaliações por categoria
+// Função para calcular as médias das categorias de avaliação
 async function calculateCategoryAverages(professionalId) {
   const evaluations = await Evaluation.find({ evaluated: professionalId });
 
@@ -56,11 +50,13 @@ async function calculateCategoryAverages(professionalId) {
 
   const totals = evaluations.reduce(
     (sum, evaluation) => {
-      sum.qualityOfWork += evaluation.categories.qualityOfWork;
-      sum.punctuality += evaluation.categories.punctuality;
-      sum.communication += evaluation.categories.communication;
-      sum.safety += evaluation.categories.safety;
-      sum.problemSolving += evaluation.categories.problemSolving;
+      const { qualityOfWork = 0, punctuality = 0, communication = 0, safety = 0, problemSolving = 0 } = evaluation.categories;
+      
+      sum.qualityOfWork += qualityOfWork;
+      sum.punctuality += punctuality;
+      sum.communication += communication;
+      sum.safety += safety;
+      sum.problemSolving += problemSolving;
       return sum;
     },
     {
@@ -72,66 +68,67 @@ async function calculateCategoryAverages(professionalId) {
     }
   );
 
-  const categoryAverages = {
+  return {
     qualityOfWork: totals.qualityOfWork / evaluations.length,
     punctuality: totals.punctuality / evaluations.length,
     communication: totals.communication / evaluations.length,
     safety: totals.safety / evaluations.length,
     problemSolving: totals.problemSolving / evaluations.length,
   };
-
-  return categoryAverages;
 }
 
-// Rota para criar uma nova avaliação
-router.post('/', protect, async (req, res) => {
-  const { evaluated, project, categories, feedback } = req.body;
-
-  try {
-    // Criar nova avaliação
-    const evaluation = new Evaluation({
-      evaluator: req.user._id, // O usuário que está avaliando
-      evaluated, // O ID do profissional/empresa avaliado
-      project, // O projeto associado
-      categories, // As categorias da avaliação
-      feedback, // O feedback adicional
-    });
-
-    const createdEvaluation = await evaluation.save(); // Salvar a avaliação
-
-    // Atualizar o averageRating do profissional avaliado
-    await updateAverageRating(evaluated);
-
-    // Criar uma notificação para o profissional avaliado
-    await Notification.create({
-      user: evaluated, // ID do profissional avaliado
-      message: `Você recebeu uma nova avaliação no projeto "${createdEvaluation.project}".`,
-      link: `/projects/${createdEvaluation.project}`, // Link para o projeto associado à avaliação
-    });
-
-    res.status(201).json(createdEvaluation); // Retornar a avaliação criada
-  } catch (error) {
-    console.error('Erro ao criar a avaliação:', error);
-    res.status(400).json({ message: 'Erro ao criar a avaliação', error: error.message });
-  }
-});
-
-// Rota para listar avaliações de um profissional ou empresa
-router.get('/:userId', async (req, res) => {
-  const { category } = req.query; // Filtro opcional
-
-  try {
-    let query = { evaluated: req.params.userId };
-
-    // Aplicar filtro de categoria, se fornecido
-    if (category) {
-      query[`categories.${category}`] = { $exists: true };
+// Rota para criar uma nova avaliação com validação e proteção
+router.post(
+  '/', 
+  [
+    protect, // Middleware de autenticação
+    body('categories.qualityOfWork').isInt({ min: 1, max: 10 }).withMessage('Quality of Work must be between 1 and 10'),
+    body('categories.punctuality').isInt({ min: 1, max: 10 }).withMessage('Punctuality must be between 1 and 10'),
+    body('categories.communication').isInt({ min: 1, max: 10 }).withMessage('Communication must be between 1 and 10'),
+    body('categories.safety').isInt({ min: 1, max: 10 }).withMessage('Safety must be between 1 and 10'),
+    body('categories.problemSolving').isInt({ min: 1, max: 10 }).withMessage('Problem Solving must be between 1 and 10'),
+  ], 
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
 
-    const evaluations = await Evaluation.find(query)
-      .populate('evaluator', 'name')  // Popula o nome do cliente que fez a avaliação
-      .populate('project', 'projectTitle');  // Popula o nome do projeto
+    const { evaluated, project, categories, feedback } = req.body;
 
+    try {
+      const evaluation = new Evaluation({
+        evaluator: req.user._id, // Pega o avaliador autenticado
+        evaluated,
+        project,
+        categories,
+        feedback,
+      });
+
+      const createdEvaluation = await evaluation.save();
+      
+      await updateAverageRating(evaluated);
+
+      await Notification.create({
+        user: evaluated,
+        message: `Você recebeu uma nova avaliação no projeto "${createdEvaluation.project}".`,
+        link: `/projects/${createdEvaluation.project}`,
+      });
+
+      res.status(201).json(createdEvaluation);
+    } catch (error) {
+      console.error('Erro ao criar a avaliação:', error);
+      res.status(400).json({ message: 'Erro ao criar a avaliação', error: error.message });
+    }
+  }
+);
+
+// Rota protegida para listar avaliações do usuário autenticado (não precisa mais do `userId` na URL)
+router.get('/', protect, async (req, res) => {
+  try {
+    const evaluations = await Evaluation.find({ evaluated: req.user._id }) // Usando o ID do usuário autenticado a partir do token
+      .populate('evaluator', 'name')
+      .populate('project', 'projectTitle');
     res.json(evaluations);
   } catch (error) {
     console.error('Erro ao buscar avaliações:', error);
@@ -139,14 +136,11 @@ router.get('/:userId', async (req, res) => {
   }
 });
 
-// Rota para listar médias das categorias de avaliações
-router.get('/:userId/averages', async (req, res) => {
+// Rota protegida para listar médias das categorias do usuário autenticado
+router.get('/averages', protect, async (req, res) => {
   try {
-    const categoryAverages = await calculateCategoryAverages(req.params.userId);
-
-    res.json({
-      averages: categoryAverages,
-    });
+    const categoryAverages = await calculateCategoryAverages(req.user._id); // Usando o ID do usuário autenticado a partir do token
+    res.json({ averages: categoryAverages });
   } catch (error) {
     console.error('Erro ao buscar médias das categorias:', error);
     res.status(400).json({ message: 'Erro ao buscar médias das categorias' });
