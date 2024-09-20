@@ -17,9 +17,9 @@ const Sidebar = ({ setSection }) => (
           <FaProjectDiagram className="icon" />
           Portfolio
         </li>
-        <li onClick={() => setSection('testimonials')}>
+        <li onClick={() => setSection('evaluations')}>
           <FaComments className="icon" />
-          Testimonials
+          Evaluations
         </li>
         <li onClick={() => setSection('ratings')}>
           <FaStar className="icon" />

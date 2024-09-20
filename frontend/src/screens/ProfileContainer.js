@@ -4,7 +4,7 @@ import Sidebar from './Sidebar';
 import ProfileSection from './ProfileSection';
 import CertificationsSection from './CertificationsSection';
 import PortfolioSection from './PortfolioSection';
-import TestimonialsSection from './TestimonialsSection';
+import EvaluationsSection from './EvaluationsSection';
 import RatingsSection from './RatingsSection';
 import '../styles/Profile.css';
 
@@ -24,6 +24,7 @@ const ProfileContainer = () => {
   const [projectMessage, setProjectMessage] = useState('');
   const [updateMessage, setUpdateMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [newCertification, setNewCertification] = useState({
     name: '',
     institution: '',
@@ -34,16 +35,21 @@ const ProfileContainer = () => {
     description: '',
     completionDate: ''
   });
+  const [error, setError] = useState(null);
 
   // Função para buscar o perfil atualizado
   const fetchProfile = useCallback(async () => {
+    setIsLoading(true); 
     try {
       const { data } = await axios.get('/api/users/profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       setProfile(data);
+      setError(null); 
     } catch (error) {
-      console.error('Failed to fetch profile data.');
+      setError('Erro ao carregar o perfil');
+    } finally {
+      setIsLoading(false); 
     }
   }, []);
 
@@ -82,7 +88,7 @@ const ProfileContainer = () => {
       });
 
       setCertificationMessage('Certification added successfully!');
-      await fetchProfile(); // Recarrega o perfil
+      await fetchProfile(); 
       setNewCertification({ name: '', institution: '', dateObtained: '' });
     } catch (error) {
       setCertificationMessage('Error adding certification.');
@@ -113,7 +119,7 @@ const ProfileContainer = () => {
       });
 
       setProjectMessage('Project added successfully!');
-      await fetchProfile(); // Recarrega o perfil
+      await fetchProfile();
       setNewProject({ projectTitle: '', description: '', completionDate: '' });
     } catch (error) {
       setProjectMessage('Error adding project.');
@@ -142,7 +148,8 @@ const ProfileContainer = () => {
     }
   }, [profile]);
 
-  if (!profile) return <div>Loading...</div>;
+  if (isLoading) return <div>Carregando perfil...</div>;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="profile-container">
@@ -179,8 +186,7 @@ const ProfileContainer = () => {
             isSubmitting={isSubmitting}
           />
         )}
-
-        {section === 'testimonials' && <TestimonialsSection />}
+        {section === 'evaluations' && <EvaluationsSection />}
         {section === 'ratings' && <RatingsSection />}
       </main>
     </div>
