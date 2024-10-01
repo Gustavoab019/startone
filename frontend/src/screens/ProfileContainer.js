@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ProfileSection from './ProfileSection';
 import CertificationsSection from './CertificationsSection';
@@ -25,17 +26,21 @@ const ProfileContainer = () => {
   const [updateMessage, setUpdateMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
   const [newCertification, setNewCertification] = useState({
     name: '',
     institution: '',
     dateObtained: ''
   });
+
   const [newProject, setNewProject] = useState({
     projectTitle: '',
     description: '',
     completionDate: ''
   });
-  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();  // useNavigate para redirecionamento
 
   // Função para buscar o perfil atualizado
   const fetchProfile = useCallback(async () => {
@@ -44,6 +49,7 @@ const ProfileContainer = () => {
       const { data } = await axios.get('/api/users/profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      console.log(data);  // Verifica os dados retornados pela API
       setProfile(data);
       setError(null); 
     } catch (error) {
@@ -52,10 +58,19 @@ const ProfileContainer = () => {
       setIsLoading(false); 
     }
   }, []);
-
+  
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    fetchProfile();
+    fetchProfile().then(() => {
+      console.log(profile.portfolio);  // Verifique aqui se os projetos estão sendo retornados corretamente
+    });
   }, [fetchProfile]);
+
+  // Função de logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');  // Remove o token do localStorage
+    navigate('/login');  // Redireciona para a página de login
+  };
 
   // Função para lidar com mudanças de input para atualizar o perfil
   const handleInputChange = (e) => {
@@ -153,7 +168,11 @@ const ProfileContainer = () => {
 
   return (
     <div className="profile-container">
+      {/* Sidebar com botão de Logout */}
       <Sidebar setSection={setSection} />
+      
+      <button onClick={handleLogout} className="logout-button">Logout</button>
+      
       <main className="profile-main-content">
         {section === 'profile' && (
           <ProfileSection
@@ -178,14 +197,15 @@ const ProfileContainer = () => {
 
         {section === 'portfolio' && (
           <PortfolioSection
-            profile={profile}
+            projects={profile.portfolio}  // Passa os projetos já carregados
             projectMessage={projectMessage}
             handleProjectChange={handleProjectChange}
-            addProject={addProject}
+            addProject={addProject}  // Passa a função addProject
             newProject={newProject}
             isSubmitting={isSubmitting}
           />
         )}
+
         {section === 'evaluations' && <EvaluationsSection />}
         {section === 'ratings' && <RatingsSection />}
       </main>

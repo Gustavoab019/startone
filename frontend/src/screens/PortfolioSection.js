@@ -6,10 +6,13 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
   const [selectedProject, setSelectedProject] = useState(''); 
   const [participants, setParticipants] = useState({ professionals: '', clients: '' });
   const [participantMessage, setParticipantMessage] = useState('');
+  const [isSubmittingParticipants, setIsSubmittingParticipants] = useState(false);  // Estado para submissão de participantes
+  const [isLoading, setIsLoading] = useState(true); // Estado para controlar o carregamento dos projetos
 
-  // Fetch the user's projects
+  // Função para buscar os projetos do usuário
   useEffect(() => {
     const fetchProjects = async () => {
+      setIsLoading(true);  // Inicia o estado de carregamento
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -30,16 +33,19 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
 
         const data = await response.json();
         setProjects(data);
+        setFetchError(null); // Remove qualquer erro
       } catch (error) {
         console.error('Error fetching projects:', error);
         setFetchError('Error fetching projects. Please try again.');
+      } finally {
+        setIsLoading(false);  // Finaliza o carregamento
       }
     };
 
     fetchProjects();
-  }, []);
+  }, []);  // Executa a busca apenas na montagem do componente
 
-  // Function to handle adding a new project
+  // Função para lidar com a adição de um novo projeto
   const addProject = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -61,71 +67,75 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
       }
 
       const data = await response.json();
-      setProjects((prevProjects) => [...prevProjects, data]); // Add new project to the state
-      parentHandleProjectChange({ target: { name: 'projectTitle', value: '' } }); // Reset projectTitle
-      parentHandleProjectChange({ target: { name: 'description', value: '' } }); // Reset description
-      parentHandleProjectChange({ target: { name: 'completionDate', value: '' } }); // Reset completionDate
+      setProjects((prevProjects) => [...prevProjects, data]);  // Adiciona o novo projeto ao estado
+      parentHandleProjectChange({ target: { name: 'projectTitle', value: '' } });  // Limpa o campo "Project Title"
+      parentHandleProjectChange({ target: { name: 'description', value: '' } });   // Limpa o campo "Description"
+      parentHandleProjectChange({ target: { name: 'completionDate', value: '' } });  // Limpa o campo "Completion Date"
     } catch (error) {
       console.error('Error adding project:', error);
     }
   };
 
-  // Function to handle adding participants to a project
-const addParticipants = async () => {
-  try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      throw new Error('Unauthorized - no token');
+  // Função para lidar com a adição de participantes a um projeto
+  const addParticipants = async () => {
+    setIsSubmittingParticipants(true);  // Inicia o estado de submissão
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Unauthorized - no token');
+      }
+
+      const response = await fetch(`/api/projects/${selectedProject}/add-participants`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          professionals: participants.professionals.split(',').map(id => id.trim()),  // Divide por vírgula e remove espaços
+          clients: participants.clients.split(',').map(id => id.trim()),  // Divide por vírgula e remove espaços
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Error adding participants');
+      }
+
+      setParticipantMessage('Participants added successfully!');
+      setParticipants({ professionals: '', clients: '' });  // Limpa os campos após o sucesso
+    } catch (error) {
+      setParticipantMessage('Error adding participants');
+      console.error('Error:', error);
+    } finally {
+      setIsSubmittingParticipants(false);  // Finaliza o estado de submissão
     }
-
-    const response = await fetch(`/api/projects/${selectedProject}/add-participants`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        professionals: participants.professionals.split(',').map(id => id.trim()), // Split by comma, trim spaces
-        clients: participants.clients.split(',').map(id => id.trim()), // Split by comma, trim spaces
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Error adding participants');
-    }
-
-    setParticipantMessage('Participants added successfully!');
-
-    // Reset the participants fields after success
-    setParticipants({ professionals: '', clients: '' });
-
-  } catch (error) {
-    setParticipantMessage('Error adding participants');
-    console.error('Error:', error);
-  }
-};
-
+  };
 
   return (
     <div className="profile-section">
       <h3>Projects</h3>
 
-      {/* Display error if there's an issue fetching projects */}
+      {/* Exibe erro ao buscar os projetos */}
       {fetchError && <p className="error-message">{fetchError}</p>}
 
-      <div className="portfolio-cards">
-        {projects.length > 0 ? (
-          projects.map((project, index) => (
-            <div key={index} className="portfolio-card">
-              <h4>{project.projectTitle}</h4>
-              <p>{project.description}</p>
-              <p>Completion Date: {new Date(project.completionDate).toLocaleDateString()}</p>
-            </div>
-          ))
-        ) : (
-          <p>No projects added.</p>
-        )}
-      </div>
+      {/* Exibe indicador de carregamento enquanto os projetos estão sendo buscados */}
+      {isLoading ? (
+        <p>Loading projects...</p>
+      ) : (
+        <div className="portfolio-cards">
+          {projects.length > 0 ? (
+            projects.map((project, index) => (
+              <div key={index} className="portfolio-card">
+                <h4>{project.projectTitle}</h4>
+                <p>{project.description}</p>
+                <p>Completion Date: {new Date(project.completionDate).toLocaleDateString()}</p>
+              </div>
+            ))
+          ) : (
+            <p>No projects added.</p>
+          )}
+        </div>
+      )}
 
       <h4>Add New Project</h4>
       {projectMessage && <p className="message">{projectMessage}</p>}
@@ -153,10 +163,10 @@ const addParticipants = async () => {
         className="input-field"
       />
       <button type="button" onClick={addProject} disabled={isSubmitting} className="action-button">
-        Add Project
+        {isSubmitting ? 'Submitting...' : 'Add Project'}
       </button>
 
-      {/* Add Participants Section */}
+      {/* Seção para adicionar participantes */}
       <h4>Add Participants to Project</h4>
       <select
         value={selectedProject}
@@ -187,11 +197,11 @@ const addParticipants = async () => {
         onChange={(e) => setParticipants({ ...participants, clients: e.target.value })}
         className="input-field"
       />
-      <button type="button" onClick={addParticipants} disabled={!selectedProject} className="action-button">
-        Add Participants
+      <button type="button" onClick={addParticipants} disabled={!selectedProject || isSubmittingParticipants} className="action-button">
+        {isSubmittingParticipants ? 'Adding...' : 'Add Participants'}
       </button>
 
-      {participantMessage && <p>{participantMessage}</p>}
+      {participantMessage && <p className="message">{participantMessage}</p>}
     </div>
   );
 };
