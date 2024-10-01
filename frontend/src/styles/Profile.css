@@ -8,14 +8,15 @@
 /* Sidebar */
 .sidebar {
   width: 250px;
-  background-color: #f0f1f6;
+  background-color: #003366; /* Azul escuro */
   padding: 20px;
   border-right: 1px solid #ccc;
-  position: fixed; /* Fixa a sidebar */
+  position: fixed;
   top: 0;
   left: 0;
-  height: 100vh; /* Garante que a sidebar cubra toda a altura da janela */
-  overflow-y: auto; /* Adiciona rolagem interna se o conteúdo for grande */
+  height: 100vh; 
+  overflow-y: auto; 
+  color: white; /* Cor do texto na sidebar */
 }
 
 .sidebar nav ul {
@@ -28,14 +29,16 @@
   align-items: center;
   padding: 15px;
   margin: 10px 0;
-  background-color: #e3e4eb;
+  background-color: #004080; /* Tom intermediário de azul */
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .sidebar nav ul li:hover, .sidebar nav ul li.active {
-  background-color: #d1d3d8;
+  background-color: #ffcc00; /* Amarelo para hover/ativo */
+  color: #003366;
+  transform: scale(1.05); /* Pequeno zoom no hover */
 }
 
 .sidebar nav ul li .icon {
@@ -45,26 +48,31 @@
 /* Ajuste do conteúdo principal */
 .profile-main-content {
   flex-grow: 1;
-  margin-left: 270px; /* Margem para ajustar ao lado da sidebar fixa */
+  margin-left: 270px; 
   padding: 20px;
-  background-color: #fff;
+  background-color: #ffffff; /* Corrigido para branco */
 }
 
 /* Seções do perfil */
 .profile-section {
   margin-bottom: 30px;
-  max-width: 600px; /* Limita a largura do conteúdo */
-  margin-left: auto; /* Centraliza a seção */
-  margin-right: auto; /* Centraliza a seção */
+  max-width: 800px; /* Aumentei um pouco a largura */
+  margin-left: auto; 
+  margin-right: auto; 
+  background-color: #f9f9f9; /* Fundo claro para destacar o conteúdo */
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .profile-section h2, .profile-section h3 {
   font-size: 1.8em;
   margin-bottom: 20px;
+  color: #003366; /* Azul escuro para títulos */
 }
 
 .profile-section h3 {
-  margin-top: 30px; /* Espaçamento maior entre as seções */
+  margin-top: 30px; 
 }
 
 .profile-section h4 {
@@ -79,42 +87,50 @@
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
+  transition: border-color 0.3s;
+}
+
+.profile-section input:focus {
+  border-color: #ffcc00; /* Destaque para input focado */
+  outline: none;
 }
 
 /* Botões */
 .action-button {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  margin-top: 10px;
-}
-
-.action-button:hover {
-  background-color: #0056b3;
-}
-
-.action-button:active {
-  background-color: #004494;
-}
-
-/* Botão "Add" */
-.add-button {
   background-color: #28a745;
   color: white;
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
   cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 10px;
+}
+
+.action-button:hover {
+  background-color: #218838;
+  transform: scale(1.05); /* Efeito de zoom ao passar o mouse */
+}
+
+.action-button:active {
+  background-color: #1c7430;
+}
+
+/* Botão "Add" */
+.add-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
   margin-top: 20px;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
 }
 
 .add-button:hover {
-  background-color: #218838;
+  background-color: #0056b3;
+  transform: scale(1.05);
 }
 
 /* Estilo dos cartões de certificações e portfólio */
@@ -132,11 +148,18 @@
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
   width: calc(50% - 20px); /* Alinha 2 cards por linha */
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.certification-card:hover, .portfolio-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Efeito de elevação no hover */
 }
 
 .certification-card h4, .portfolio-card h4 {
   font-size: 1.4em;
   margin-bottom: 10px;
+  color: #003366; /* Azul escuro para títulos */
 }
 
 .certification-card p, .portfolio-card p {
@@ -150,9 +173,13 @@
   margin-top: 10px;
 }
 
+.success-message {
+  color: green;
+}
+
 /* Tipografia */
 body {
-  font-family: 'Arial', sans-serif;
+  font-family: 'Roboto', sans-serif;
 }
 
 .profile-section p {
@@ -183,10 +210,10 @@ h2, h3 {
   }
 
   .certification-card, .portfolio-card {
-    width: 100%; /* Full-width para telas menores */
+    width: 100%; 
   }
 
   .profile-section input {
-    width: 100%; /* Inputs em full-width para telas menores */
+    width: 100%; 
   }
 }

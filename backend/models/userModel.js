@@ -19,47 +19,26 @@ const userSchema = mongoose.Schema({
     enum: ['professional', 'company', 'client'], // Define o tipo de usuário
     required: true
   },
-  specialties: {
-    type: [String], // Exemplo: ['carpenter', 'electrician']
+  // Removemos as especialidades, certificações, portfólio, etc., que serão movidos para os modelos de perfil especializados
+  professionalProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProfessionalProfile',  // Referência ao modelo de perfil de profissional
   },
-  experienceYears: {
-    type: Number // Anos de experiência
-  },
-  certifications: [
-    {
-      name: { type: String, required: true },           // Nome da Certificação
-      institution: { type: String, required: true },    // Instituição emissora
-      dateObtained: { type: Date, required: true },     // Data de obtenção
-    }
-  ],
-  portfolio: [
-    {
-      projectTitle: { type: String, required: true },
-      description: { type: String, required: true },
-      images: [String], // Array de URLs de imagens
-      completionDate: { type: Date, required: true }
-    }
-  ],
   location: {
-    type: String,
-    required: function () {
-      return this.type === 'professional';
-    },
+    type: String, // Localização obrigatória para todos os tipos de usuário
+    required: true
   },
-  companyDetails: {
-    companyName: { type: String },
-    location: { type: String }, 
-    services: [String]
+  companyProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CompanyProfile',  // Referência ao modelo de perfil da empresa
   },
-  employees: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'  // Referência aos profissionais
-    }
-  ],
+  clientProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClientProfile',  // Referência ao modelo de perfil do cliente
+  },
   averageRating: {
     type: Number,
-    default: 0, // Começa como 0 até o profissional receber avaliações
+    default: 0, // Começa como 0 até o usuário (profissional ou empresa) receber avaliações
   },
   isAdmin: {
     type: Boolean,
