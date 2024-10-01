@@ -5,6 +5,9 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 const { protect } = require('../middlewares/authMiddleware');
 const { check, validationResult } = require('express-validator');
+const ProfessionalProfileModel = require('../models/ProfessionalProfileModel');
+const CompanyProfileModel = require('../models/CompanyProfileModel');
+const ClientProfileModel = require('../models/ClientProfileModel');
 
 // Middleware de validação para registro
 const validateRegister = [
@@ -14,7 +17,6 @@ const validateRegister = [
   check('type', 'User type is required').not().isEmpty()
 ];
 
-
 // Rota para registro de usuário com validação
 router.post('/register', validateRegister, async (req, res) => {
   const errors = validationResult(req);
@@ -22,7 +24,7 @@ router.post('/register', validateRegister, async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { name, email, password, type, specialties, experienceYears, certifications, portfolio, location, companyDetails } = req.body;
+  const { name, email, password, type, location, specialties, experienceYears, certifications, portfolio, companyDetails } = req.body;
 
   try {
     // Verifica se o usuário já existe
@@ -35,31 +37,52 @@ router.post('/register', validateRegister, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Cria um novo usuário com base no tipo (professional, company, client)
+    // Cria um novo usuário
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       type,
-      specialties: type === 'professional' ? specialties : undefined,
-      experienceYears: type === 'professional' ? experienceYears : undefined,
-      certifications: type === 'professional' ? certifications : undefined,
-      portfolio: type === 'professional' ? portfolio : undefined,
-      location: type === 'professional' ? location : undefined,
-      companyDetails: type === 'company' ? companyDetails : undefined
+      location  // Localização obrigatória para todos os tipos de usuário
     });
+
+    // Verifica o tipo de usuário e cria o perfil correspondente
+    if (type === 'professional') {
+      await ProfessionalProfileModel.create({
+        userId: user._id,  // Relaciona com o ID do usuário
+        specialties,
+        experienceYears,
+        certifications,
+        portfolio,
+        location
+      });
+    } else if (type === 'company') {
+      await CompanyProfileModel.create({
+        userId: user._id,  // Relaciona com o ID do usuário
+        companyName: companyDetails.companyName,
+        location: companyDetails.location,
+        servicesOffered: companyDetails.services
+      });
+    } else if (type === 'client') {
+      await ClientProfileModel.create({
+        userId: user._id,  // Relaciona com o ID do usuário
+        fullName: name,
+        email: email,
+        location
+      });
+    }
 
     // Gera o token JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: '30d',
     });
 
-    // Retorna a resposta com os dados do usuário e o token
     res.status(201).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       type: user.type,
+      location: user.location,
       token
     });
   } catch (error) {
@@ -67,6 +90,7 @@ router.post('/register', validateRegister, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
 
 
 // Middleware de validação para login
@@ -113,6 +137,7 @@ const validateUpdateProfile = [
   check('name', 'Name cannot be empty').optional().not().isEmpty(),
   check('specialties', 'Specialties cannot be empty').optional().not().isEmpty(),
   check('experienceYears', 'Experience must be a number').optional().isNumeric(),
+  check('location', 'Location cannot be empty').optional().not().isEmpty()
 ];
 
 // Rota protegida para atualizar o perfil do usuário
@@ -128,22 +153,8 @@ router.put('/profile', protect, validateUpdateProfile, async (req, res) => {
     if (user) {
       user.name = req.body.name || user.name;
       user.email = req.body.email || user.email;
+      user.location = req.body.location || user.location;  // Atualiza a localização
 
-      // Atualiza campos específicos de profissionais
-      if (user.type === 'professional') {
-        user.specialties = req.body.specialties || user.specialties;
-        user.experienceYears = req.body.experienceYears || user.experienceYears;
-        user.certifications = req.body.certifications || user.certifications;
-        user.portfolio = req.body.portfolio || user.portfolio;
-        user.location = req.body.location || user.location; // Atualizar o campo location também
-      }
-
-      // Atualiza campos específicos de empresas
-      if (user.type === 'company') {
-        user.companyDetails = req.body.companyDetails || user.companyDetails;
-      }
-
-      // Atualiza a senha, se for enviada
       if (req.body.password) {
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(req.body.password, salt);
@@ -155,12 +166,7 @@ router.put('/profile', protect, validateUpdateProfile, async (req, res) => {
         name: updatedUser.name,
         email: updatedUser.email,
         type: updatedUser.type,
-        specialties: updatedUser.specialties,
-        experienceYears: updatedUser.experienceYears,
-        certifications: updatedUser.certifications,
-        portfolio: updatedUser.portfolio,
-        location: updatedUser.location, // Certifique-se de que está retornando a localização
-        companyDetails: updatedUser.companyDetails
+        location: updatedUser.location  // Retorna a localização do usuário
       });
     } else {
       res.status(404).json({ message: 'User not found' });
@@ -171,22 +177,23 @@ router.put('/profile', protect, validateUpdateProfile, async (req, res) => {
   }
 });
 
+
 // Rota para listar profissionais com filtros
 router.get('/professionals', protect, async (req, res) => {
   try {
     const { specialty, location, averageRatingMin, averageRatingMax } = req.query;
 
     // Criar a query com filtros opcionais
-    let query = { type: 'professional' }; // Garante que estamos buscando apenas profissionais
+    let query = {};
 
     // Filtro por especialidade
     if (specialty) {
-      query.specialties = { $in: [specialty] };
+      query.specialties = { $in: [specialty] }; // Verifica se a especialidade existe no array de specialties
     }
 
     // Filtro por localização
     if (location) {
-      query['location'] = location; // Usar diretamente o campo location para profissionais
+      query.location = location; // Filtra pela localização do profissional
     }
 
     // Filtro por intervalo de avaliação média
@@ -198,9 +205,9 @@ router.get('/professionals', protect, async (req, res) => {
       query.averageRating = { $lte: averageRatingMax };
     }
 
-    // Executar a consulta
-    const professionals = await User.find(query)
-      .select('name specialties averageRating location') // Selecionar os campos relevantes
+    // Executar a consulta no modelo de perfil de profissional
+    const professionals = await ProfessionalProfileModel.find(query)
+      .populate('userId', 'name averageRating') // Traz o nome e avaliação média do modelo User
       .exec();
 
     res.json(professionals);
@@ -210,29 +217,52 @@ router.get('/professionals', protect, async (req, res) => {
   }
 });
 
+
+
 router.get('/profile', protect, async (req, res) => {
   try {
+    // Busca o usuário pelo ID do token JWT
     const user = await User.findById(req.user._id);
-    if (user) {
-      res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        type: user.type,
-        specialties: user.specialties,
-        experienceYears: user.experienceYears,
-        certifications: user.certifications,
-        portfolio: user.portfolio,
-        location: user.location,
-        companyDetails: user.companyDetails,
-        averageRating: user.averageRating,
-      });
-    } else {
-      res.status(404).json({ message: 'User not found' });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
     }
+
+    let profileData;
+
+    // Buscar dados específicos de acordo com o tipo de usuário
+    if (user.type === 'professional') {
+      profileData = await ProfessionalProfileModel.findOne({ userId: user._id });
+    } else if (user.type === 'company') {
+      profileData = await CompanyProfileModel.findOne({ userId: user._id });
+    } else if (user.type === 'client') {
+      profileData = await ClientProfileModel.findOne({ userId: user._id });
+    }
+
+    if (!profileData) {
+      return res.status(404).json({ message: `${user.type} profile not found` });
+    }
+
+    // Montar a resposta mesclando os dados do UserModel com o perfil específico
+    const mergedProfile = {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      type: user.type,
+      location: user.location,  // Adicionar a localização que está no UserModel
+      ...profileData.toObject() // Mesclar os dados do perfil específico (transformado em objeto)
+    };
+
+    res.json(mergedProfile);
+
   } catch (error) {
+    console.error('Error fetching profile:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+
+
+
 
 module.exports = router;
