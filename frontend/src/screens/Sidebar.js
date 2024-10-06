@@ -1,8 +1,8 @@
 import React from 'react';
 import { FaCertificate, FaProjectDiagram, FaStar, FaComments, FaUser } from 'react-icons/fa';
 
-const Sidebar = ({ setSection }) => (
-  <aside className="sidebar">
+const Sidebar = ({ setSection, isOpen }) => (
+  <aside className={`sidebar ${isOpen ? 'open' : 'closed'}`}>
     <nav>
       <ul>
         <li onClick={() => setSection('profile')}>

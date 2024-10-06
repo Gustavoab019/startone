@@ -3,28 +3,28 @@ import React, { useState, useEffect } from 'react';
 const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandleProjectChange, newProject, isSubmitting }) => {
   const [projects, setProjects] = useState([]);
   const [fetchError, setFetchError] = useState(null);
-  const [selectedProject, setSelectedProject] = useState(''); 
+  const [selectedProject, setSelectedProject] = useState('');
   const [participants, setParticipants] = useState({ professionals: '', clients: '' });
   const [participantMessage, setParticipantMessage] = useState('');
-  const [isSubmittingParticipants, setIsSubmittingParticipants] = useState(false);  // Estado para submissão de participantes
-  const [isLoading, setIsLoading] = useState(true); // Estado para controlar o carregamento dos projetos
+  const [isSubmittingParticipants, setIsSubmittingParticipants] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Função para buscar os projetos do usuário
   useEffect(() => {
     const fetchProjects = async () => {
-      setIsLoading(true);  // Inicia o estado de carregamento
+      setIsLoading(true); // Inicia o estado de carregamento
       try {
         const token = localStorage.getItem('token');
         if (!token) {
           throw new Error('Unauthorized - no token');
         }
 
-        const response = await fetch('/api/projects/my-projects', {
+        const response = await fetch('http://localhost:5000/api/projects/my-projects', { // Corrigido para usar a porta correta
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
-          },  
+          },
         });
 
         if (!response.ok) {
@@ -36,14 +36,21 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
         setFetchError(null); // Remove qualquer erro
       } catch (error) {
         console.error('Error fetching projects:', error);
-        setFetchError('Error fetching projects. Please try again.');
+        setFetchError(`Error fetching projects. Please try again. Details: ${error.message}`);
       } finally {
-        setIsLoading(false);  // Finaliza o carregamento
+        setIsLoading(false); // Finaliza o carregamento
       }
     };
 
     fetchProjects();
-  }, []);  // Executa a busca apenas na montagem do componente
+  }, []);
+
+  // Função para resetar os campos do formulário de projeto
+  const resetProjectForm = () => {
+    parentHandleProjectChange({ target: { name: 'projectTitle', value: '' } });
+    parentHandleProjectChange({ target: { name: 'description', value: '' } });
+    parentHandleProjectChange({ target: { name: 'completionDate', value: '' } });
+  };
 
   // Função para lidar com a adição de um novo projeto
   const addProject = async () => {
@@ -53,7 +60,7 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
         throw new Error('Unauthorized - no token');
       }
 
-      const response = await fetch('/api/projects', {
+      const response = await fetch('http://localhost:5000/api/projects', { // Corrigido para usar a porta correta
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -67,10 +74,8 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
       }
 
       const data = await response.json();
-      setProjects((prevProjects) => [...prevProjects, data]);  // Adiciona o novo projeto ao estado
-      parentHandleProjectChange({ target: { name: 'projectTitle', value: '' } });  // Limpa o campo "Project Title"
-      parentHandleProjectChange({ target: { name: 'description', value: '' } });   // Limpa o campo "Description"
-      parentHandleProjectChange({ target: { name: 'completionDate', value: '' } });  // Limpa o campo "Completion Date"
+      setProjects((prevProjects) => [...prevProjects, data]); // Adiciona o novo projeto ao estado
+      resetProjectForm(); // Limpa os campos do formulário
     } catch (error) {
       console.error('Error adding project:', error);
     }
@@ -78,22 +83,27 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
 
   // Função para lidar com a adição de participantes a um projeto
   const addParticipants = async () => {
-    setIsSubmittingParticipants(true);  // Inicia o estado de submissão
+    if (!participants.professionals && !participants.clients) {
+      setParticipantMessage('Please provide at least one professional or client.');
+      return;
+    }
+
+    setIsSubmittingParticipants(true); // Inicia o estado de submissão
     try {
       const token = localStorage.getItem('token');
       if (!token) {
         throw new Error('Unauthorized - no token');
       }
 
-      const response = await fetch(`/api/projects/${selectedProject}/add-participants`, {
+      const response = await fetch(`http://localhost:5000/api/projects/${selectedProject}/add-participants`, { // Corrigido para usar a porta correta
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          professionals: participants.professionals.split(',').map(id => id.trim()),  // Divide por vírgula e remove espaços
-          clients: participants.clients.split(',').map(id => id.trim()),  // Divide por vírgula e remove espaços
+          professionals: participants.professionals.split(',').map(id => id.trim()), // Divide por vírgula e remove espaços
+          clients: participants.clients.split(',').map(id => id.trim()), // Divide por vírgula e remove espaços
         }),
       });
 
@@ -102,12 +112,12 @@ const PortfolioSection = ({ projectMessage, handleProjectChange: parentHandlePro
       }
 
       setParticipantMessage('Participants added successfully!');
-      setParticipants({ professionals: '', clients: '' });  // Limpa os campos após o sucesso
+      setParticipants({ professionals: '', clients: '' }); // Limpa os campos após o sucesso
     } catch (error) {
       setParticipantMessage('Error adding participants');
       console.error('Error:', error);
     } finally {
-      setIsSubmittingParticipants(false);  // Finaliza o estado de submissão
+      setIsSubmittingParticipants(false); // Finaliza o estado de submissão
     }
   };
 
