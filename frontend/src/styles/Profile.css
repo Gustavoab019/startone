@@ -17,8 +17,11 @@
   height: 100vh; 
   overflow-y: auto; 
   color: white; /* Cor do texto na sidebar */
+  z-index: 1000; /* Certificar que a sidebar fique sobreposta ao conteúdo */
+  transition: transform 0.3s ease; /* Transição suave para ocultar/exibir */
 }
 
+/* Itens de navegação da sidebar */
 .sidebar nav ul {
   list-style-type: none;
   padding: 0;
@@ -48,7 +51,7 @@
 /* Ajuste do conteúdo principal */
 .profile-main-content {
   flex-grow: 1;
-  margin-left: 270px; 
+  margin-left: 270px; /* Espaçamento suficiente para a sidebar */
   padding: 20px;
   background-color: #ffffff; /* Corrigido para branco */
 }
@@ -56,7 +59,7 @@
 /* Seções do perfil */
 .profile-section {
   margin-bottom: 30px;
-  max-width: 800px; /* Aumentei um pouco a largura */
+  max-width: 800px;
   margin-left: auto; 
   margin-right: auto; 
   background-color: #f9f9f9; /* Fundo claro para destacar o conteúdo */
@@ -192,7 +195,7 @@ h2, h3 {
   color: #333;
 }
 
-/* Responsividade */
+/* Responsividade e Sidebar recolhível no Mobile */
 @media (max-width: 768px) {
   .profile-container {
     flex-direction: column;
@@ -203,17 +206,98 @@ h2, h3 {
     position: relative;
     height: auto;
     border-right: none;
+    overflow-y: auto;
+    padding: 10px; /* Ajustar padding para telas menores */
+  }
+
+  .sidebar.nav {
+    transform: translateX(-250px); /* Sidebar oculta no mobile */
+  }
+
+  .sidebar.open {
+    transform: translateX(0); /* Exibe a sidebar quando aberta */
   }
 
   .profile-main-content {
     margin-left: 0;
+    padding-top: 10px;
   }
 
   .certification-card, .portfolio-card {
-    width: 100%; 
+    width: 100%; /* Cada cartão ocupa 100% da largura no mobile */
   }
 
   .profile-section input {
     width: 100%; 
   }
 }
+
+/* Sidebar e botão no mobile */
+.toggle-sidebar {
+  background-color: #003366;
+  color: white;
+  padding: 10px;
+  cursor: pointer;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1001;
+  display: block;
+  border: none;
+  border-radius: 5px;
+}
+
+.logout-button {
+  background-color: #28a745;
+  color: white;
+  padding: 10px 20px;
+  cursor: pointer;
+  border: none;
+  border-radius: 5px;
+  margin-left: 10px; /* Adicionar espaçamento entre os botões */
+}
+
+.profile-main-content {
+  margin: 20px auto; /* Centraliza o conteúdo */
+  padding: 20px;
+  max-width: 600px; /* Limita a largura máxima no desktop e no mobile */
+  background-color: #f9f9f9;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsividade: Sidebar escondida no mobile ao fechar */
+.sidebar {
+  transition: transform 0.3s ease;
+}
+
+.sidebar.closed {
+  transform: translateX(-100%); /* Oculta a sidebar fora da tela */
+}
+
+/* Ajustes para garantir que o conteúdo principal ocupe toda a tela quando a sidebar estiver fechada */
+@media (max-width: 768px) {
+  .profile-main-content {
+    margin-left: 0;
+    padding-top: 20px;
+  }
+  
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 250px;
+    height: 100%;
+    background-color: #003366;
+    transform: translateX(0); /* A sidebar começa visível */
+  }
+
+  .sidebar.closed {
+    transform: translateX(-100%); /* Esconde a sidebar ao fechar */
+  }
+
+  .toggle-sidebar {
+    display: block; /* Garante que o botão de toggle apareça no mobile */
+  }
+}
+

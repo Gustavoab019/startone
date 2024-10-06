@@ -20,14 +20,16 @@ const ProfileContainer = () => {
     confirmPassword: ''
   });
 
-  const [section, setSection] = useState('profile');
+  const [section, setSection] = useState('profile'); // Alterna as seções
   const [certificationMessage, setCertificationMessage] = useState('');
   const [projectMessage, setProjectMessage] = useState('');
   const [updateMessage, setUpdateMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Estado para alternar sidebar no mobile
+
   const [newCertification, setNewCertification] = useState({
     name: '',
     institution: '',
@@ -40,7 +42,7 @@ const ProfileContainer = () => {
     completionDate: ''
   });
 
-  const navigate = useNavigate();  // useNavigate para redirecionamento
+  const navigate = useNavigate(); // Para redirecionamento
 
   // Função para buscar o perfil atualizado
   const fetchProfile = useCallback(async () => {
@@ -49,7 +51,6 @@ const ProfileContainer = () => {
       const { data } = await axios.get('/api/users/profile', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
-      console.log(data);  // Verifica os dados retornados pela API
       setProfile(data);
       setError(null); 
     } catch (error) {
@@ -58,18 +59,20 @@ const ProfileContainer = () => {
       setIsLoading(false); 
     }
   }, []);
-  
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
-    fetchProfile().then(() => {
-      console.log(profile.portfolio);  // Verifique aqui se os projetos estão sendo retornados corretamente
-    });
+    fetchProfile();
   }, [fetchProfile]);
 
   // Função de logout
   const handleLogout = () => {
-    localStorage.removeItem('token');  // Remove o token do localStorage
-    navigate('/login');  // Redireciona para a página de login
+    localStorage.removeItem('token'); // Remove o token do localStorage
+    navigate('/login'); // Redireciona para a página de login
+  };
+
+  // Controle da sidebar para mobile
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen); // Alterna entre aberto e fechado
   };
 
   // Função para lidar com mudanças de input para atualizar o perfil
@@ -103,7 +106,7 @@ const ProfileContainer = () => {
       });
 
       setCertificationMessage('Certification added successfully!');
-      await fetchProfile(); 
+      await fetchProfile();
       setNewCertification({ name: '', institution: '', dateObtained: '' });
     } catch (error) {
       setCertificationMessage('Error adding certification.');
@@ -168,11 +171,15 @@ const ProfileContainer = () => {
 
   return (
     <div className="profile-container">
-      {/* Sidebar com botão de Logout */}
-      <Sidebar setSection={setSection} />
-      
+      {/* Sidebar com controle de exibição no mobile */}
+      <button className="toggle-sidebar" onClick={toggleSidebar}>
+        {sidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
+      </button>
+
+      <Sidebar setSection={setSection} isOpen={sidebarOpen} />
+
       <button onClick={handleLogout} className="logout-button">Logout</button>
-      
+
       <main className="profile-main-content">
         {section === 'profile' && (
           <ProfileSection
@@ -197,10 +204,10 @@ const ProfileContainer = () => {
 
         {section === 'portfolio' && (
           <PortfolioSection
-            projects={profile.portfolio}  // Passa os projetos já carregados
+            projects={profile.portfolio}
             projectMessage={projectMessage}
             handleProjectChange={handleProjectChange}
-            addProject={addProject}  // Passa a função addProject
+            addProject={addProject}
             newProject={newProject}
             isSubmitting={isSubmitting}
           />

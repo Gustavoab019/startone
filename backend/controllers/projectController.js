@@ -6,16 +6,18 @@ exports.getMyProjects = async (req, res) => {
     const userId = req.user._id; // Certifique-se de usar req.user._id
     const projects = await Project.find({ createdById: userId });
 
+    // Se não houver projetos, retorna uma lista vazia em vez de erro 404
     if (!projects || projects.length === 0) {
-      return res.status(404).json({ message: 'No projects found.' });
+      return res.status(200).json([]); // Retorna um array vazio ao invés de um erro
     }
 
-    res.status(200).json(projects);
+    res.status(200).json(projects); // Retorna os projetos encontrados
   } catch (error) {
     console.error('Error fetching projects:', error);
     res.status(500).json({ message: 'Error fetching projects.' });
   }
 };
+
 
 // Função para adicionar um novo projeto
 exports.addProject = async (req, res) => {
