@@ -9,15 +9,30 @@ const ProfessionalProfileModel = require('../models/ProfessionalProfileModel');
 const CompanyProfileModel = require('../models/CompanyProfileModel');
 const ClientProfileModel = require('../models/ClientProfileModel');
 
+// Função para gerar token JWT
+const generateToken = (id) => {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d', // Define a validade do token (30 dias)
+  });
+};
+
+// Função para gerar username aleatório
+function generateRandomUsername(name) {
+  const randomSuffix = Math.floor(1000 + Math.random() * 9000); // Gera número aleatório
+  const baseUsername = name.toLowerCase().replace(/\s+/g, ''); // Remove espaços do nome
+  return `${baseUsername}${randomSuffix}`; // Retorna nome base + sufixo aleatório
+}
+
 // Middleware de validação para registro
 const validateRegister = [
   check('name', 'Name is required').not().isEmpty(),
   check('email', 'Please include a valid email').isEmail(),
   check('password', 'Password must be at least 6 characters').isLength({ min: 6 }),
-  check('type', 'User type is required').not().isEmpty()
+  check('type', 'User type is required').not().isEmpty(),
+  check('location', 'Location is required').not().isEmpty()
 ];
 
-// Rota para registro de usuário com validação
+// Rota para registro de usuário
 router.post('/register', validateRegister, async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -37,9 +52,13 @@ router.post('/register', validateRegister, async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // Gera o username aleatório com base no nome do usuário
+    const username = generateRandomUsername(name);
+
     // Cria um novo usuário
     const user = await User.create({
       name,
+      username,  // Adiciona o username gerado
       email,
       password: hashedPassword,
       type,
@@ -77,14 +96,17 @@ router.post('/register', validateRegister, async (req, res) => {
       expiresIn: '30d',
     });
 
+    // Retorna a resposta com o token e os dados do usuário
     res.status(201).json({
       _id: user._id,
       name: user.name,
+      username: user.username, // Retorna o username gerado
       email: user.email,
       type: user.type,
       location: user.location,
       token
     });
+
   } catch (error) {
     console.error('Error during registration:', error);
     res.status(500).json({ message: 'Server error' });
@@ -181,7 +203,7 @@ router.put('/profile', protect, validateUpdateProfile, async (req, res) => {
 // Rota para listar profissionais com filtros
 router.get('/professionals', protect, async (req, res) => {
   try {
-    const { specialty, location, averageRatingMin, averageRatingMax } = req.query;
+    const { specialty, location, averageRatingMin, averageRatingMax, username } = req.query;
 
     // Criar a query com filtros opcionais
     let query = {};
@@ -205,9 +227,23 @@ router.get('/professionals', protect, async (req, res) => {
       query.averageRating = { $lte: averageRatingMax };
     }
 
+    // Filtro por username (caso fornecido)
+    let userQuery = {}; // Query para o modelo de usuários
+
+    if (username) {
+      userQuery.username = new RegExp(username, 'i'); // Filtro para encontrar usuários pelo username (case-insensitive)
+    }
+
+    // Busca no modelo User com a query de username, se houver
+    const users = await User.find(userQuery).select('_id'); // Obtém os IDs dos usuários que correspondem ao username
+
+    if (username) {
+      query.userId = { $in: users.map((user) => user._id) }; // Adiciona o filtro por userId correspondente ao username
+    }
+
     // Executar a consulta no modelo de perfil de profissional
     const professionals = await ProfessionalProfileModel.find(query)
-      .populate('userId', 'name averageRating') // Traz o nome e avaliação média do modelo User
+      .populate('userId', 'name email location averageRating username') // Traz o nome, avaliação e username do modelo User
       .exec();
 
     res.json(professionals);
@@ -219,47 +255,55 @@ router.get('/professionals', protect, async (req, res) => {
 
 
 
+
 router.get('/profile', protect, async (req, res) => {
   try {
     // Busca o usuário pelo ID do token JWT
     const user = await User.findById(req.user._id);
 
+    // Verifica se o usuário existe
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 
     let profileData;
 
     // Buscar dados específicos de acordo com o tipo de usuário
     if (user.type === 'professional') {
-      profileData = await ProfessionalProfileModel.findOne({ userId: user._id });
+      profileData = await ProfessionalProfileModel.findOne({ userId: user._id }).lean(); // Usa .lean() para retornar um objeto simples
     } else if (user.type === 'company') {
-      profileData = await CompanyProfileModel.findOne({ userId: user._id });
+      profileData = await CompanyProfileModel.findOne({ userId: user._id }).lean();
     } else if (user.type === 'client') {
-      profileData = await ClientProfileModel.findOne({ userId: user._id });
+      profileData = await ClientProfileModel.findOne({ userId: user._id }).lean();
     }
 
+    // Verifica se o perfil específico foi encontrado
     if (!profileData) {
-      return res.status(404).json({ message: `${user.type} profile not found` });
+      return res.status(404).json({ message: `Perfil de ${user.type} não encontrado.` });
     }
 
-    // Montar a resposta mesclando os dados do UserModel com o perfil específico
+    // Mescla os dados do UserModel com os dados específicos do perfil
     const mergedProfile = {
       _id: user._id,
-      name: user.name,
-      email: user.email,
+      name: user.name || profileData.name,  // Fallback para garantir que o nome esteja presente
+      email: user.email || profileData.email,  // Fallback para garantir que o email esteja presente
+      username: user.username || 'Username não definido',  // Verifica se o username existe
       type: user.type,
-      location: user.location,  // Adicionar a localização que está no UserModel
-      ...profileData.toObject() // Mesclar os dados do perfil específico (transformado em objeto)
+      location: user.location || 'Localização não fornecida',  // Garante que a localização esteja preenchida
+      ...profileData  // Mescla os dados do perfil específico
     };
 
+    // Enviar o perfil mesclado como resposta
     res.json(mergedProfile);
 
   } catch (error) {
-    console.error('Error fetching profile:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Erro ao buscar perfil:', error);
+    res.status(500).json({ message: 'Erro no servidor.' });
   }
 });
+
+
+
 
 
 
