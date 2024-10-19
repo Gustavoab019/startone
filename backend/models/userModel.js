@@ -5,6 +5,11 @@ const userSchema = mongoose.Schema({
     type: String,
     required: true
   },
+  username: {
+    type: String,
+    unique: true, // O nome de usuário deve ser único
+    required: true
+  },
   email: {
     type: String,
     required: true,
@@ -46,6 +51,15 @@ const userSchema = mongoose.Schema({
   }
 }, {
   timestamps: true
+});
+
+// Middleware para gerar o username antes de salvar o usuário
+userSchema.pre('save', function (next) {
+  if (!this.username) {
+    // Gera o nome de usuário apenas se ele ainda não tiver sido definido
+    this.username = generateRandomUsername(this.name);
+  }
+  next();
 });
 
 const User = mongoose.model('User', userSchema);

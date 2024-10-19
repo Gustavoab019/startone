@@ -1,67 +1,36 @@
 import axios from 'axios';
-import {
-  USER_LOGIN_REQUEST,
-  USER_LOGIN_SUCCESS,
-  USER_LOGIN_FAIL,
-  USER_REGISTER_REQUEST,
-  USER_REGISTER_SUCCESS,
-  USER_REGISTER_FAIL,
-} from '../constants/authConstants';
+import { USER_LOGIN_SUCCESS, USER_LOGIN_FAIL, USER_LOGOUT } from '../constants/authConstants';  // Make sure you're importing correctly
 
-// Login
+// Login Action
 export const login = (email, password) => async (dispatch) => {
   try {
-    dispatch({ type: USER_LOGIN_REQUEST });
-
     const config = {
       headers: {
         'Content-Type': 'application/json',
       },
     };
 
-    // Certifique-se de que a URL aponte para o backend correto
-    const { data } = await axios.post('http://localhost:5000/api/users/login', { email, password }, config);
+    const { data } = await axios.post('/api/users/login', { email, password }, config);
 
-    dispatch({ type: USER_LOGIN_SUCCESS, payload: data });
+    dispatch({
+      type: USER_LOGIN_SUCCESS,  // Using consistent constant names
+      payload: data,  // The full user data, including token, will be saved
+    });
 
-    // Armazenar o usuário no localStorage
+    // Store userInfo in localStorage to persist the login
     localStorage.setItem('userInfo', JSON.stringify(data));
   } catch (error) {
     dispatch({
-      type: USER_LOGIN_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
+      type: USER_LOGIN_FAIL,  // Consistent naming
+      payload: error.response && error.response.data.message
+        ? error.response.data.message
+        : error.message,
     });
   }
 };
 
-// Register
-export const register = (name, email, password) => async (dispatch) => {
-  try {
-    dispatch({ type: USER_REGISTER_REQUEST });
-
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
-
-    const { data } = await axios.post('http://localhost:5000/api/users/register', { name, email, password }, config);
-
-    dispatch({ type: USER_REGISTER_SUCCESS, payload: data });
-
-    dispatch({ type: USER_LOGIN_SUCCESS, payload: data });
-
-    localStorage.setItem('userInfo', JSON.stringify(data));
-  } catch (error) {
-    dispatch({
-      type: USER_REGISTER_FAIL,
-      payload:
-        error.response && error.response.data.message
-          ? error.response.data.message
-          : error.message,
-    });
-  }
+// Logout Action
+export const logout = () => (dispatch) => {
+  localStorage.removeItem('userInfo');  // Remove userInfo from localStorage
+  dispatch({ type: USER_LOGOUT });  // Use USER_LOGOUT constant
 };
