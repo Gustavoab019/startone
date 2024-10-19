@@ -275,6 +275,24 @@ h2, h3 {
   transform: translateX(-100%); /* Oculta a sidebar fora da tela */
 }
 
+/* Overlay para cobrir a tela quando a sidebar estiver aberta */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5); /* Transparência */
+  z-index: 999; /* Certifica-se de que a sobreposição esteja acima de tudo */
+  display: none; /* Inicia escondida */
+}
+
+/* Exibe o overlay quando a sidebar estiver aberta */
+.sidebar.open + .sidebar-overlay {
+  display: block;
+}
+
+
 /* Ajustes para garantir que o conteúdo principal ocupe toda a tela quando a sidebar estiver fechada */
 @media (max-width: 768px) {
   .profile-main-content {
