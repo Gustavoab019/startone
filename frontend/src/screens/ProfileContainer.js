@@ -7,6 +7,7 @@ import CertificationsSection from './CertificationsSection';
 import PortfolioSection from './PortfolioSection';
 import EvaluationsSection from './EvaluationsSection';
 import RatingsSection from './RatingsSection';
+import SearchUsersSection from './SearchUsersSection';
 import '../styles/Profile.css';
 
 const ProfileContainer = () => {
@@ -67,7 +68,7 @@ const ProfileContainer = () => {
   // Função de logout
   const handleLogout = () => {
     localStorage.removeItem('token'); // Remove o token do localStorage
-    navigate('/login'); // Redireciona para a página de login
+    navigate('/'); // Redireciona para a página de login
   };
 
   // Controle da sidebar para mobile
@@ -176,9 +177,7 @@ const ProfileContainer = () => {
         {sidebarOpen ? 'Close Sidebar' : 'Open Sidebar'}
       </button>
 
-      <Sidebar setSection={setSection} isOpen={sidebarOpen} />
-
-      <button onClick={handleLogout} className="logout-button">Logout</button>
+      <Sidebar setSection={setSection} isOpen={sidebarOpen} handleLogout={handleLogout}/>
 
       <main className="profile-main-content">
         {section === 'profile' && (
@@ -215,6 +214,7 @@ const ProfileContainer = () => {
 
         {section === 'evaluations' && <EvaluationsSection />}
         {section === 'ratings' && <RatingsSection />}
+        {section === 'search' && <SearchUsersSection/>}
       </main>
     </div>
   );
