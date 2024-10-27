@@ -12,4 +12,8 @@ router.post('/', protect, projectController.addProject);
 // Rota para adicionar participantes a um projeto
 router.put('/:projectId/add-participants', protect, projectController.addParticipants);
 
+// Rota para buscar projetos de um usuário específico
+router.get('/user/:userId', protect, projectController.getProjectsByUserId);
+
+
 module.exports = router;
