@@ -1,4 +1,5 @@
 const Project = require('../models/projectModel.js');
+const User = require('../models/userModel');
 
 // Função para buscar projetos do usuário
 exports.getMyProjects = async (req, res) => {
@@ -75,3 +76,39 @@ exports.addParticipants = async (req, res) => {
     res.status(500).json({ message: 'Error adding participants.' });
   }
 };
+
+// Fetch projects by userId where the user is either the creator or a participant
+exports.getProjectsByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params; // Pegue o userId dos parâmetros da rota
+
+    // 1. Busque o usuário no UserModel usando o _id
+    const user = await User.findById(userId); // Supondo que o userId seja o ObjectId do usuário
+
+    // Verifica se o usuário existe
+    if (!user) {
+      return res.status(404).json({ message: 'Usuário não encontrado.' });
+    }
+
+    // 2. Agora busque os projetos onde esse usuário está envolvido
+    const projects = await Project.find({
+      $or: [
+        { createdById: user._id},           // Projetos criados pelo usuário
+        { professionals: user._id },         // Projetos onde o usuário é um profissional
+        { participants: user._id }           // Projetos onde o usuário é um participante
+      ]
+    });
+
+    // Se não houver projetos, retorne um array vazio
+    if (!projects || projects.length === 0) {
+      return res.status(200).json([]); // Retorna um array vazio
+    }
+
+    // Retorne os projetos encontrados
+    res.status(200).json(projects);
+  } catch (error) {
+    console.error('Erro ao buscar projetos para o usuário:', error);
+    res.status(500).json({ message: 'Erro ao buscar projetos para o usuário.' });
+  }
+};
+
