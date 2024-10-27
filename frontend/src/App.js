@@ -4,6 +4,8 @@ import AuthPage from './components/Auth/AuthPage'; // Fix the path
 import Dashboard from './components/Dashboard';
 import Profile from './screens/ProfileContainer';
 import Professionals from './screens/ProfessionalSearch';
+import EvaluationForm from './screens/EvaluationForm';
+
 
 
 const App = () => {
@@ -14,6 +16,7 @@ const App = () => {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/profissionals" element={<Professionals />} />
+        <Route path="/evaluate/:id" element={<EvaluationForm />} />
 
       </Routes>
     </Router>
