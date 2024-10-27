@@ -1,38 +1,35 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FaSearch } from 'react-icons/fa'; // Ícone de busca
+import { FaSearch } from 'react-icons/fa'; // Icon for the search input
 import '../styles/SearchUser.css';
 
 const SearchUsersSection = () => {
-  const [searchQuery, setSearchQuery] = useState(''); // Query de busca
-  const [searchResults, setSearchResults] = useState([]); // Resultados da busca
-  const [isLoading, setIsLoading] = useState(false); // Estado de loading
-  const [errorMessage, setErrorMessage] = useState(null); // Mensagens de erro
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [projects, setProjects] = useState([]); // Estado para armazenar os projetos
 
-  // Função para lidar com mudanças no input de pesquisa
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
-    console.log('Query de busca:', event.target.value); // Log do valor de busca
   };
 
-  // Função para buscar usuários na API conforme o usuário digita
   const searchUsers = useCallback(async () => {
     if (searchQuery.trim() === '') {
-      setSearchResults([]); // Limpa os resultados se não houver query
+      setSearchResults([]);
       return;
     }
 
-    setIsLoading(true); // Inicia o loading
-    setErrorMessage(null); // Limpa as mensagens de erro
+    setIsLoading(true);
+    setErrorMessage(null);
 
     try {
-      const token = localStorage.getItem('token'); // Obtém o token JWT
+      const token = localStorage.getItem('token');
       if (!token) {
         setErrorMessage('User is not authenticated. Please log in.');
         setIsLoading(false);
         return;
       }
-
-      console.log('Enviando request para /api/users/professionals com username:', searchQuery);
 
       const response = await fetch(`/api/users/professionals?username=${searchQuery}`, {
         headers: {
@@ -41,92 +38,135 @@ const SearchUsersSection = () => {
       });
 
       const result = await response.json();
-      console.log('Dados retornados pela API:', result); // Log dos dados retornados pela API
 
       if (response.ok) {
-        if (result.length > 0) {
-          setSearchResults(result); // Define os resultados da busca se houverem usuários
-          console.log('Resultados da busca:', result);
-        } else {
-          setErrorMessage(`No users found matching "${searchQuery}".`);
-          console.log('Nenhum usuário encontrado');
-        }
+        setSearchResults(result);
       } else {
         setErrorMessage(result.message || 'Failed to fetch users.');
-        console.error('Erro na resposta da API:', result.message || 'Erro desconhecido');
       }
     } catch (error) {
       setErrorMessage('An error occurred while searching for users.');
-      console.error('Erro ao buscar usuários:', error);
     } finally {
-      setIsLoading(false); // Finaliza o estado de loading
+      setIsLoading(false);
     }
-  }, [searchQuery]); // Dependência de `searchQuery`
+  }, [searchQuery]);
 
-  // Chama a função de busca toda vez que o `searchQuery` muda
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      searchUsers(); // Faz a busca após um pequeno delay para evitar chamadas excessivas
-    }, 500); // Aguarda 500ms para evitar buscas muito rápidas
+      searchUsers();
+    }, 500);
 
-    return () => clearTimeout(delayDebounceFn); // Limpa o timeout se o componente for desmontado ou o query mudar
+    return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, searchUsers]);
 
-  // Função para renderizar o perfil retornado
+  // Função para abrir o modal de avaliação e buscar projetos
+  const handleEvaluateClick = (profile) => {
+    const userId = profile.userId._id ? profile.userId._id.toString() : profile.userId.toString();
+    setIsModalOpen(true); // Abre o modal
+
+    // Busca os projetos do usuário selecionado
+    fetchUserProjects(userId);
+  };
+
+  // Função para buscar os projetos do usuário
+  const fetchUserProjects = async (userId) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('User is not authenticated. Please log in.');
+
+      const response = await fetch(`/api/projects/user/${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setProjects(result);
+      } else {
+        setProjects([]); // Limpa os projetos caso a busca falhe
+        setErrorMessage(result.message || 'Failed to fetch projects.');
+      }
+    } catch (error) {
+      setErrorMessage('An error occurred while fetching projects.');
+      setProjects([]);
+    }
+  };
+
+  // Função para fechar o modal
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setProjects([]); // Limpa os projetos ao fechar o modal
+  };
+
   const renderProfile = (profile) => {
-    console.log('Renderizando perfil:', profile); // Log dos dados do perfil
-    const profileName = profile.userId.name || profile.username || 'User'; // Verifica se existe `name` ou `username`
+    const profileName = profile.userId.name || profile.username || 'User';
 
     return (
-      <div key={profile._id} className="user-result">
-        <h2>{profileName}'s Profile</h2> {/* Nome do usuário */}
+      <div key={profile.userId._id || profile.userId} className="user-result">
+        <h2>{profileName}'s Profile</h2>
         <p><strong>Email:</strong> {profile.userId.email || 'Not provided'}</p>
         <p><strong>Location:</strong> {profile.userId.location || 'Not provided'}</p>
-        <p><strong>Especialidades:</strong> {profile.specialties || 'Not provided'}</p>
-        <p><strong>Anos de Experiência:</strong> {profile.experienceYears || 'Not provided'}</p>
-        
-
-
+        <p><strong>Specialties:</strong> {profile.specialties || 'Not provided'}</p>
+        <p><strong>Years of Experience:</strong> {profile.experienceYears || 'Not provided'}</p>
+        <button onClick={() => handleEvaluateClick(profile)}>Evaluate</button>
 
         {profile.type === 'professional' && (
           <>
-            <p><strong>Specialties:</strong> {profile.specialties && profile.specialties.length > 0 
-              ? profile.specialties.join(', ') 
-              : 'Not provided'}
-            </p>
-            <p><strong>Years of Experience:</strong> {profile.experienceYears || 'Not provided'}</p>
             <p><strong>Average Rating:</strong> {profile.averageRating || 'Not rated yet'}</p>
-          </>
-        )}
-
-        {profile.type === 'client' && (
-          <>
-            <p><strong>Hiring History:</strong> {profile.hiringHistory && profile.hiringHistory.length > 0 
-              ? profile.hiringHistory.join(', ') 
-              : 'No history available'}
-            </p>
-            <p><strong>Reviews Given:</strong> {profile.reviewsGiven && profile.reviewsGiven.length > 0 
-              ? profile.reviewsGiven.join(', ') 
-              : 'No reviews available'}
-            </p>
-          </>
-        )}
-
-        {profile.type === 'company' && (
-          <>
-            <p><strong>Services Offered:</strong> {profile.services && profile.services.length > 0 
-              ? profile.services.join(', ') 
-              : 'Not provided'}
-            </p>
-            <p><strong>Employees:</strong> {profile.employees && profile.employees.length > 0 
-              ? profile.employees.join(', ') 
-              : 'No employees listed'}
-            </p>
           </>
         )}
       </div>
     );
   };
+
+  const renderEvaluationModal = () => (
+    <div className="modal-overlay">
+      <div className="modal">
+        <h2>Avaliar Usuário</h2>
+        <form>
+          <div>
+            <label>Selecione um Projeto</label>
+            <select required>
+              <option value="">-- Selecione um Projeto --</option>
+              {projects.map((project) => (
+                <option key={project._id} value={project._id}>
+                  {project.projectTitle}
+                </option>
+              ))}
+            </select>
+          </div>
+          {/* Campos de avaliação */}
+          <div>
+            <label>qualityOfWork</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>punctuality</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>communication</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>safety</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>problemSolving</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>Feedback</label>
+            <textarea required />
+          </div>
+          <button type="submit">Enviar Avaliação</button>
+          <button type="button" onClick={closeModal}>Cancelar</button>
+        </form>
+      </div>
+    </div>
+  );
 
   return (
     <div className="search-users-section">
@@ -150,12 +190,15 @@ const SearchUsersSection = () => {
       ) : (
         <div className="search-results">
           {searchResults.length > 0 ? (
-            searchResults.map((profile) => renderProfile(profile)) // Mapeia e renderiza os perfis
+            searchResults.map((profile) => renderProfile(profile))
           ) : (
             <p>No users found matching "{searchQuery}".</p>
           )}
         </div>
       )}
+
+      {/* Renderiza o modal se estiver aberto */}
+      {isModalOpen && renderEvaluationModal()}
     </div>
   );
 };
