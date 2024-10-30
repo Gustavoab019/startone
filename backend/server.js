@@ -51,3 +51,4 @@ app.use('/api/rankings', rankingRoutes);
 app.use('/api/company', companyPanelRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/participants', evaluationRoutes);
