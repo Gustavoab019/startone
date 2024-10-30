@@ -62,7 +62,7 @@
 
 .modal {
     background: #ffffff;
-    padding: 30px;
+    padding: 20px; /* Reduzi o padding para economizar espaço */
     border-radius: 10px;
     box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
     width: 90%;
@@ -83,22 +83,24 @@
 .modal h2 {
     margin-top: 0;
     color: #333;
-    font-size: 1.5em;
+    font-size: 1.4em; /* Tamanho ajustado para caber melhor */
     font-weight: 600;
 }
 
 .modal label {
-    font-size: 1em;
+    font-size: 0.9em; /* Label menor para harmonizar com inputs */
     color: #666;
+    display: inline-block;
+    margin-bottom: 5px;
 }
 
 .modal input,
 .modal select,
 .modal textarea {
     width: 100%;
-    padding: 10px;
-    margin-top: 8px;
-    margin-bottom: 15px;
+    padding: 8px; /* Reduzi o padding para caixas de texto mais compactas */
+    margin-top: 6px;
+    margin-bottom: 10px; /* Margin menor para compactar */
     border: 1px solid #ddd;
     border-radius: 5px;
     font-size: 0.9em;
@@ -112,10 +114,26 @@
     outline: none;
 }
 
+.modal textarea {
+    resize: vertical;
+    height: 60px; /* Reduzindo a altura inicial do textarea */
+}
+
+/* Alinhamento lado a lado para campos */
+.modal .form-group {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.modal .form-group .half-width {
+    flex: 1 1 48%; /* Cada campo ocupa 48% da largura, alinhando 2 por linha */
+}
+
 .modal button[type="submit"] {
     background-color: #28a745;
     color: white;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
     border-radius: 5px;
     font-size: 1em;
@@ -130,7 +148,7 @@
 .modal button[type="button"] {
     background-color: #dc3545;
     color: white;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
     border-radius: 5px;
     font-size: 1em;
@@ -143,7 +161,6 @@
     background-color: #c82333;
 }
 
-/* Botão de fechar no canto superior direito */
 .modal-close {
     position: absolute;
     top: 10px;

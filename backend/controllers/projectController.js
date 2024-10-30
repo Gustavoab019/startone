@@ -90,21 +90,21 @@ exports.getProjectsByUserId = async (req, res) => {
       return res.status(404).json({ message: 'Usuário não encontrado.' });
     }
 
-    // 2. Agora busque os projetos onde esse usuário está envolvido
+    // 2. Agora busque os projetos onde esse usuário está envolvido e popule os participantes
     const projects = await Project.find({
       $or: [
-        { createdById: user._id},           // Projetos criados pelo usuário
-        { professionals: user._id },         // Projetos onde o usuário é um profissional
-        { participants: user._id }           // Projetos onde o usuário é um participante
+        { createdById: user._id },      // Projetos criados pelo usuário
+        { professionals: user._id },    // Projetos onde o usuário é um profissional
+        { participants: user._id }      // Projetos onde o usuário é um participante
       ]
-    });
+    }).populate('participants', 'name email'); // Popula os participantes com nome e email
 
     // Se não houver projetos, retorne um array vazio
     if (!projects || projects.length === 0) {
       return res.status(200).json([]); // Retorna um array vazio
     }
 
-    // Retorne os projetos encontrados
+    // Retorne os projetos com os dados dos participantes
     res.status(200).json(projects);
   } catch (error) {
     console.error('Erro ao buscar projetos para o usuário:', error);

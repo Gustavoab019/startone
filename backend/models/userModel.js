@@ -7,7 +7,7 @@ const userSchema = mongoose.Schema({
   },
   username: {
     type: String,
-    unique: true, // O nome de usuário deve ser único
+    unique: true,
     required: true
   },
   email: {
@@ -21,34 +21,37 @@ const userSchema = mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['professional', 'company', 'client'], // Define o tipo de usuário
+    enum: ['professional', 'company', 'client'],
     required: true
   },
-  // Removemos as especialidades, certificações, portfólio, etc., que serão movidos para os modelos de perfil especializados
   professionalProfile: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ProfessionalProfile',  // Referência ao modelo de perfil de profissional
+    ref: 'ProfessionalProfile',
   },
   location: {
-    type: String, // Localização obrigatória para todos os tipos de usuário
+    type: String,
     required: true
   },
   companyProfile: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'CompanyProfile',  // Referência ao modelo de perfil da empresa
+    ref: 'CompanyProfile',
   },
   clientProfile: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ClientProfile',  // Referência ao modelo de perfil do cliente
+    ref: 'ClientProfile',
   },
   averageRating: {
     type: Number,
-    default: 0, // Começa como 0 até o usuário (profissional ou empresa) receber avaliações
+    default: 0,
   },
   isAdmin: {
     type: Boolean,
     default: false
-  }
+  },
+  followers: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }] // Lista de seguidores, referenciando outros usuários
 }, {
   timestamps: true
 });
@@ -56,7 +59,6 @@ const userSchema = mongoose.Schema({
 // Middleware para gerar o username antes de salvar o usuário
 userSchema.pre('save', function (next) {
   if (!this.username) {
-    // Gera o nome de usuário apenas se ele ainda não tiver sido definido
     this.username = generateRandomUsername(this.name);
   }
   next();
