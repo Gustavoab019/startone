@@ -253,9 +253,6 @@ router.get('/professionals', protect, async (req, res) => {
   }
 });
 
-
-
-
 router.get('/profile', protect, async (req, res) => {
   try {
     // Busca o usuário pelo ID do token JWT
@@ -270,7 +267,7 @@ router.get('/profile', protect, async (req, res) => {
 
     // Buscar dados específicos de acordo com o tipo de usuário
     if (user.type === 'professional') {
-      profileData = await ProfessionalProfileModel.findOne({ userId: user._id }).lean(); // Usa .lean() para retornar um objeto simples
+      profileData = await ProfessionalProfileModel.findOne({ userId: user._id }).lean();
     } else if (user.type === 'company') {
       profileData = await CompanyProfileModel.findOne({ userId: user._id }).lean();
     } else if (user.type === 'client') {
@@ -282,15 +279,16 @@ router.get('/profile', protect, async (req, res) => {
       return res.status(404).json({ message: `Perfil de ${user.type} não encontrado.` });
     }
 
-    // Mescla os dados do UserModel com os dados específicos do perfil
+    // Adiciona a contagem de seguidores ao perfil mesclado
     const mergedProfile = {
       _id: user._id,
-      name: user.name || profileData.name,  // Fallback para garantir que o nome esteja presente
-      email: user.email || profileData.email,  // Fallback para garantir que o email esteja presente
-      username: user.username || 'Username não definido',  // Verifica se o username existe
+      name: user.name || profileData.name,
+      email: user.email || profileData.email,
+      username: user.username || 'Username não definido',
       type: user.type,
-      location: user.location || 'Localização não fornecida',  // Garante que a localização esteja preenchida
-      ...profileData  // Mescla os dados do perfil específico
+      location: user.location || 'Localização não fornecida',
+      followersCount: user.followers ? user.followers.length : 0, // Contagem de seguidores
+      ...profileData
     };
 
     // Enviar o perfil mesclado como resposta
@@ -303,8 +301,33 @@ router.get('/profile', protect, async (req, res) => {
 });
 
 
+// Rota para seguir/desseguir um usuário
+router.put('/follow/:id', protect, async (req, res) => {
+  const { id } = req.params; // ID do usuário a ser seguido/desseguido
+  const currentUserId = req.user._id; // ID do usuário atual (do token)
 
+  try {
+    const userToFollow = await User.findById(id);
+    if (!userToFollow) {
+      return res.status(404).json({ message: 'Usuário não encontrado' });
+    }
 
+    // Verifica se o usuário já está seguindo
+    if (userToFollow.followers.includes(currentUserId)) {
+      // Se sim, desfaz o follow
+      userToFollow.followers.pull(currentUserId);
+      await userToFollow.save();
+      return res.json({ message: 'Deixou de seguir o usuário' });
+    } else {
+      // Caso contrário, adiciona o follow
+      userToFollow.followers.push(currentUserId);
+      await userToFollow.save();
+      return res.json({ message: 'Seguiu o usuário' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Erro ao processar solicitação', error: error.message });
+  }
+});
 
 
 
