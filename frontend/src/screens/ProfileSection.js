@@ -56,11 +56,6 @@ const ProfileSection = ({
       <h2>{profile.type === 'company' ? profile.companyName : profile.name}'s Profile</h2>
       <p>Email: {profile.email}</p>
 
-      {/* Exibe o número de seguidores, se estiver disponível */}
-      {profile.followersCount !== undefined && (
-        <p>Followers: {profile.followersCount}</p>
-      )}
-
       {/* Renderiza o perfil conforme o tipo de usuário */}
       {profile.type === 'professional' && renderProfessionalProfile()}
       {profile.type === 'client' && renderClientProfile()}
