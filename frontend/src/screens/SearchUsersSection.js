@@ -110,30 +110,32 @@ const SearchUsersSection = () => {
 
   const handleSubmitEvaluation = async (event) => {
     event.preventDefault();
-
+  
     if (!selectedUserId) {
       setErrorMessage('User ID is not selected. Please select a user to evaluate.');
       return;
     }
-
+  
     const formData = new FormData(event.target);
     const evaluationData = {
       evaluated: selectedUserId,
-      project: formData.get("projectId"),
+      project: formData.get("projectId"), // Ensure this captures the project ID
       categories: {
-        qualityOfWork: formData.get("qualityOfWork"),
-        punctuality: formData.get("punctuality"),
-        communication: formData.get("communication"),
-        safety: formData.get("safety"),
-        problemSolving: formData.get("problemSolving"),
+        qualityOfWork: parseInt(formData.get("qualityOfWork"), 10),
+        punctuality: parseInt(formData.get("punctuality"), 10),
+        communication: parseInt(formData.get("communication"), 10),
+        safety: parseInt(formData.get("safety"), 10),
+        problemSolving: parseInt(formData.get("problemSolving"), 10),
       },
       feedback: formData.get("feedback"),
     };
-
+  
+    console.log("Submitting Evaluation Data:", evaluationData); // Debugging line
+  
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('User is not authenticated. Please log in.');
-
+  
       const response = await fetch(`/api/evaluations`, {
         method: 'POST',
         headers: {
@@ -142,29 +144,34 @@ const SearchUsersSection = () => {
         },
         body: JSON.stringify(evaluationData),
       });
-
+  
       if (response.ok) {
         alert('Evaluation submitted successfully.');
         closeModal();
       } else {
         const result = await response.json();
+        console.error("Server Error:", result); // Debugging line
         setErrorMessage(result.message || 'Failed to submit evaluation.');
       }
     } catch (error) {
+      console.error("Submission Error:", error); // Debugging line
       setErrorMessage('An error occurred while submitting the evaluation.');
     }
   };
+  
+  
 
   const handleFollow = async (userId) => {
     try {
       const token = localStorage.getItem('token');
+      const method = following[userId] ? 'DELETE' : 'POST';
       await fetch(`/api/users/follow/${userId}`, {
-        method: 'PUT',
+        method: method,
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-
+  
       setFollowing((prev) => ({
         ...prev,
         [userId]: !prev[userId]
@@ -173,6 +180,7 @@ const SearchUsersSection = () => {
       console.error('Erro ao seguir/desseguir o usuário:', error);
     }
   };
+  
 
   const renderProfile = (profile) => {
     const profileName = profile.userId.name || profile.username || 'User';

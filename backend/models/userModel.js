@@ -51,7 +51,11 @@ const userSchema = mongoose.Schema({
   followers: [{ 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
-  }] // Lista de seguidores, referenciando outros usuários
+  }], // Lista de seguidores
+  following: [{ 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'User' 
+  }] // Lista de usuários que este usuário está seguindo
 }, {
   timestamps: true
 });

@@ -10,19 +10,20 @@ const EvaluationsSection = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    const fetchEvaluations = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        const token = localStorage.getItem('token');
 
-        // Requisição para obter as avaliações do usuário autenticado
+        // Fetch evaluations with project participants data
         const evaluationsResponse = await axios.get('/api/evaluations', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setEvaluationsData(evaluationsResponse.data);
 
-        // Requisição para obter as médias por categoria do usuário autenticado
+        // Fetch category averages
         const averagesResponse = await axios.get('/api/evaluations/averages', {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          headers: { Authorization: `Bearer ${token}` },
         });
         setCategoryAverages(averagesResponse.data.averages);
 
@@ -31,16 +32,16 @@ const EvaluationsSection = () => {
         setAverageRating(generalAverage);
 
         setError(null);
-        setLoading(false);
       } catch (error) {
-        const errorMessage = error.response?.data?.message || 'Erro ao carregar as avaliações';
+        const errorMessage = error.response?.data?.message || 'Error loading evaluations';
         setError(errorMessage);
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchEvaluations();
-  }, []); // Executa o efeito apenas uma vez ao montar o componente
+    fetchData();
+  }, []);
 
   if (loading) {
     return <p>Loading evaluations...</p>;
@@ -54,39 +55,48 @@ const EvaluationsSection = () => {
     <div className="evaluations-section">
       <h3>Professional Evaluations</h3>
 
-      {/* Exibe a média geral */}
+      {/* General Average Rating */}
       <div className="average-rating">
         <h4>General Average Rating: {averageRating ? averageRating.toFixed(2) : 'Not rated yet'}</h4>
       </div>
 
-      {/* Exibe as médias por categoria */}
+      {/* Category Averages */}
       {categoryAverages && (
         <>
           <h4>Category Averages:</h4>
-          <p>Quality of Work: {categoryAverages.qualityOfWork.toFixed(2)}</p>
-          <p>Punctuality: {categoryAverages.punctuality.toFixed(2)}</p>
-          <p>Communication: {categoryAverages.communication.toFixed(2)}</p>
-          <p>Safety: {categoryAverages.safety.toFixed(2)}</p>
-          <p>Problem Solving: {categoryAverages.problemSolving.toFixed(2)}</p>
+          {Object.keys(categoryAverages).map((category) => (
+            <p key={category}>{category}: {categoryAverages[category].toFixed(2)}</p>
+          ))}
         </>
       )}
 
-      {/* Histórico de avaliações */}
+      {/* Evaluation History */}
       <h4>Evaluation History:</h4>
       {evaluationsData.length > 0 ? (
         <div className="evaluation-cards">
-          {evaluationsData.map((evaluation, index) => (
-            <div key={index} className="evaluation-card">
+          {evaluationsData.map((evaluation) => (
+            <div key={evaluation._id} className="evaluation-card">
               <h5>Project: {evaluation.project?.projectTitle || 'N/A'}</h5>
               <p>Evaluator: {evaluation.evaluator?.name || 'N/A'}</p>
               <p>Feedback: {evaluation.feedback || 'No feedback provided'}</p>
 
+              {/* Categories */}
               <div className="categories">
-                <p>Quality of Work: {evaluation.categories.qualityOfWork || 'N/A'}</p>
-                <p>Punctuality: {evaluation.categories.punctuality || 'N/A'}</p>
-                <p>Communication: {evaluation.categories.communication || 'N/A'}</p>
-                <p>Safety: {evaluation.categories.safety || 'N/A'}</p>
-                <p>Problem Solving: {evaluation.categories.problemSolving || 'N/A'}</p>
+                {Object.entries(evaluation.categories).map(([category, score]) => (
+                  <p key={category}>{category}: {score || 'N/A'}</p>
+                ))}
+              </div>
+
+              {/* Participants */}
+              <div className="participants">
+                <h5>Project Participants:</h5>
+                {evaluation.project?.participants?.length > 0 ? (
+                  evaluation.project.participants.map((participant) => (
+                    <p key={participant._id}>{participant.name}</p>
+                  ))
+                ) : (
+                  <p>No participants found.</p>
+                )}
               </div>
             </div>
           ))}

@@ -59,13 +59,11 @@
 /* Seções do perfil */
 .profile-section {
   margin-bottom: 30px;
-  max-width: 800px;
   margin-left: auto; 
   margin-right: auto; 
   background-color: #f9f9f9; /* Fundo claro para destacar o conteúdo */
   padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .profile-section h2, .profile-section h3 {
@@ -258,7 +256,6 @@ h2, h3 {
 }
 
 .profile-main-content {
-  margin: 20px auto; /* Centraliza o conteúdo */
   padding: 20px;
   max-width: 600px; /* Limita a largura máxima no desktop e no mobile */
   background-color: #f9f9f9;
