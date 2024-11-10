@@ -301,33 +301,113 @@ router.get('/profile', protect, async (req, res) => {
 });
 
 
-// Rota para seguir/desseguir um usuário
-router.put('/follow/:id', protect, async (req, res) => {
-  const { id } = req.params; // ID do usuário a ser seguido/desseguido
-  const currentUserId = req.user._id; // ID do usuário atual (do token)
-
+// Rota para seguir um usuário
+router.post('/follow/:id', protect, async (req, res) => {
   try {
-    const userToFollow = await User.findById(id);
-    if (!userToFollow) {
-      return res.status(404).json({ message: 'Usuário não encontrado' });
+    const userId = req.user._id; // ID do usuário atual (extraído do token)
+    const followId = req.params.id; // ID do perfil a ser seguido
+
+    // Impede o usuário de seguir a si mesmo
+    if (userId.toString() === followId) {
+      return res.status(400).json({ message: "You cannot follow yourself." });
     }
 
-    // Verifica se o usuário já está seguindo
-    if (userToFollow.followers.includes(currentUserId)) {
-      // Se sim, desfaz o follow
-      userToFollow.followers.pull(currentUserId);
-      await userToFollow.save();
-      return res.json({ message: 'Deixou de seguir o usuário' });
-    } else {
-      // Caso contrário, adiciona o follow
-      userToFollow.followers.push(currentUserId);
-      await userToFollow.save();
-      return res.json({ message: 'Seguiu o usuário' });
+    const user = await User.findById(userId);
+    const followUser = await User.findById(followId);
+
+    // Verifica se o usuário a ser seguido existe
+    if (!followUser) {
+      return res.status(404).json({ message: "User to follow not found." });
     }
+
+    // Verifica se o usuário já está seguindo o perfil
+    if (user.following.includes(followId)) {
+      return res.status(400).json({ message: "You are already following this user." });
+    }
+
+    // Adiciona o usuário a ser seguido na lista "following" do usuário atual
+    user.following.push(followId);
+
+    // Adiciona o usuário atual na lista "followers" do usuário seguido
+    if (!followUser.followers.includes(userId)) {
+      followUser.followers.push(userId);
+    }
+
+    await user.save();
+    await followUser.save();
+
+    return res.status(200).json({
+      message: "User followed successfully.",
+      following: followUser._id
+    });
+
   } catch (error) {
-    res.status(500).json({ message: 'Erro ao processar solicitação', error: error.message });
+    console.error(error);
+    res.status(500).json({ message: "An error occurred while following the user." });
   }
 });
+
+// Rota para deixar de seguir um usuário
+router.delete('/follow/:id', protect, async (req, res) => {
+  try {
+    const userId = req.user._id; // ID do usuário atual (extraído do token)
+    const unfollowId = req.params.id; // ID do perfil a ser deixado de seguir
+
+    const user = await User.findById(userId);
+    const unfollowUser = await User.findById(unfollowId);
+
+    // Verifica se o usuário a ser deixado de seguir existe
+    if (!unfollowUser) {
+      return res.status(404).json({ message: "User to unfollow not found." });
+    }
+
+    // Remove o ID do perfil do array "following" do usuário atual
+    user.following = user.following.filter(id => !id.equals(unfollowId));
+
+    // Remove o ID do usuário atual do array "followers" do usuário seguido
+    unfollowUser.followers = unfollowUser.followers.filter(id => !id.equals(userId));
+
+    await user.save();
+    await unfollowUser.save();
+
+    return res.status(200).json({
+      message: "User unfollowed successfully.",
+      unfollowing: unfollowUser._id
+    });
+
+  } catch (error) {
+    console.error("Erro ao realizar unfollow:", error);
+    res.status(500).json({ message: "An error occurred while unfollowing the user." });
+  }
+});
+
+router.get('/:id/followers', protect, async (req, res) => {
+  try {
+    const userId = req.params.id;
+    
+    // Busca o usuário sem o populate para verificar o conteúdo de followers
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    // Exibe o conteúdo de followers sem o populate
+    console.log("Followers IDs:", user.followers);
+
+    // Agora aplique o populate para buscar os dados completos
+    const populatedUser = await User.findById(userId).populate('followers', 'name username email location');
+
+    res.status(200).json({ followers: populatedUser.followers });
+
+  } catch (error) {
+    console.error("Erro ao buscar seguidores:", error);
+    res.status(500).json({ message: "An error occurred while fetching followers." });
+  }
+});
+
+
+
 
 
 

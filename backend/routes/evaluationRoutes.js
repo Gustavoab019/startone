@@ -109,9 +109,11 @@ router.post(
       
       await updateAverageRating(evaluated);
 
+      const projectData = await Project.findById(project).select('projectTitle'); // Busca o título do projeto para exibir na notificação
+
       await Notification.create({
         user: evaluated,
-        message: `Você recebeu uma nova avaliação no projeto "${createdEvaluation.project}".`,
+        message: `Você recebeu uma nova avaliação no projeto "${projectData.projectTitle}".`,
         link: `/projects/${createdEvaluation.project}`,
       });
 
@@ -123,12 +125,20 @@ router.post(
   }
 );
 
-// Rota protegida para listar avaliações do usuário autenticado (não precisa mais do `userId` na URL)
+// Rota protegida para listar avaliações do usuário autenticado com nomes dos participantes do projeto
 router.get('/', protect, async (req, res) => {
   try {
     const evaluations = await Evaluation.find({ evaluated: req.user._id }) // Usando o ID do usuário autenticado a partir do token
       .populate('evaluator', 'name')
-      .populate('project', 'projectTitle');
+      .populate({
+        path: 'project',
+        select: 'projectTitle participants',
+        populate: {
+          path: 'participants',
+          select: 'name', // Inclui apenas o nome dos participantes
+        },
+      });
+      
     res.json(evaluations);
   } catch (error) {
     console.error('Erro ao buscar avaliações:', error);
