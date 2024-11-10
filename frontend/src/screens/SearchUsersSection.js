@@ -8,9 +8,7 @@ const SearchUsersSection = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [projects, setProjects] = useState([]);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [following, setFollowing] = useState({}); // Armazena o estado de seguir de cada usuário
+  const [projects, setProjects] = useState([]); // Estado para armazenar os projetos
 
   const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
@@ -33,7 +31,6 @@ const SearchUsersSection = () => {
         return;
       }
 
-      // Fetch users based on the search query
       const response = await fetch(`/api/users/professionals?username=${searchQuery}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -44,14 +41,6 @@ const SearchUsersSection = () => {
 
       if (response.ok) {
         setSearchResults(result);
-
-        // Verifica se o usuário está seguindo cada perfil retornado
-        const followingStatus = {};
-        result.forEach((user) => {
-          followingStatus[user.userId._id] = user.isFollowing; // 'isFollowing' vem do backend
-        });
-        setFollowing(followingStatus);
-
       } else {
         setErrorMessage(result.message || 'Failed to fetch users.');
       }
@@ -70,14 +59,16 @@ const SearchUsersSection = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery, searchUsers]);
 
+  // Função para abrir o modal de avaliação e buscar projetos
   const handleEvaluateClick = (profile) => {
     const userId = profile.userId._id ? profile.userId._id.toString() : profile.userId.toString();
-    setSelectedUserId(userId);
-    setIsModalOpen(true);
+    setIsModalOpen(true); // Abre o modal
 
+    // Busca os projetos do usuário selecionado
     fetchUserProjects(userId);
   };
 
+  // Função para buscar os projetos do usuário
   const fetchUserProjects = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -93,7 +84,7 @@ const SearchUsersSection = () => {
       if (response.ok) {
         setProjects(result);
       } else {
-        setProjects([]);
+        setProjects([]); // Limpa os projetos caso a busca falhe
         setErrorMessage(result.message || 'Failed to fetch projects.');
       }
     } catch (error) {
@@ -102,6 +93,7 @@ const SearchUsersSection = () => {
     }
   };
 
+  // Função para fechar o modal
   const closeModal = () => {
     setIsModalOpen(false);
     setProjects([]);
@@ -179,6 +171,7 @@ const SearchUsersSection = () => {
     } catch (error) {
       console.error('Erro ao seguir/desseguir o usuário:', error);
     }
+    setProjects([]); // Limpa os projetos ao fechar o modal
   };
   
 
@@ -193,9 +186,6 @@ const SearchUsersSection = () => {
         <p><strong>Specialties:</strong> {profile.specialties || 'Not provided'}</p>
         <p><strong>Years of Experience:</strong> {profile.experienceYears || 'Not provided'}</p>
         <button onClick={() => handleEvaluateClick(profile)}>Evaluate</button>
-        <button onClick={() => handleFollow(profile.userId._id)}>
-          {following[profile.userId._id] ? 'Unfollow' : 'Follow'}
-        </button>
 
         {profile.type === 'professional' && (
           <>
@@ -209,12 +199,12 @@ const SearchUsersSection = () => {
   const renderEvaluationModal = () => (
     <div className="modal-overlay">
       <div className="modal">
-        <h2>Evaluate User</h2>
-        <form onSubmit={handleSubmitEvaluation}>
+        <h2>Avaliar Usuário</h2>
+        <form>
           <div>
-            <label>Select a Project</label>
-            <select name="projectId" required>
-              <option value="">-- Select a Project --</option>
+            <label>Selecione um Projeto</label>
+            <select required>
+              <option value="">-- Selecione um Projeto --</option>
               {projects.map((project) => (
                 <option key={project._id} value={project._id}>
                   {project.projectTitle}
@@ -222,39 +212,33 @@ const SearchUsersSection = () => {
               ))}
             </select>
           </div>
-          {/* Evaluation Fields */}
-          <div className="form-group">
-            <div className="half-width">
-              <label>Quality of Work</label>
-              <input type="number" name="qualityOfWork" min="1" max="10" required />
-            </div>
-            <div className="half-width">
-              <label>Punctuality</label>
-              <input type="number" name="punctuality" min="1" max="10" required />
-            </div>
+          {/* Campos de avaliação */}
+          <div>
+            <label>qualityOfWork</label>
+            <input type="number" min="1" max="10" required />
           </div>
-          <div className="form-group">
-            <div className="half-width">
-              <label>Communication</label>
-              <input type="number" name="communication" min="1" max="10" required />
-            </div>
-            <div className="half-width">
-              <label>Safety</label>
-              <input type="number" name="safety" min="1" max="10" required />
-            </div>
+          <div>
+            <label>punctuality</label>
+            <input type="number" min="1" max="10" required />
           </div>
-          <div className="form-group">
-            <div className="half-width">
-              <label>Problem Solving</label>
-              <input type="number" name="problemSolving" min="1" max="10" required />
-            </div>
-            <div className="half-width">
-              <label>Feedback</label>
-              <textarea name="feedback" required />
-            </div>
+          <div>
+            <label>communication</label>
+            <input type="number" min="1" max="10" required />
           </div>
-          <button type="submit">Submit Evaluation</button>
-          <button type="button" onClick={closeModal}>Cancel</button>
+          <div>
+            <label>safety</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>problemSolving</label>
+            <input type="number" min="1" max="10" required />
+          </div>
+          <div>
+            <label>Feedback</label>
+            <textarea required />
+          </div>
+          <button type="submit">Enviar Avaliação</button>
+          <button type="button" onClick={closeModal}>Cancelar</button>
         </form>
       </div>
     </div>

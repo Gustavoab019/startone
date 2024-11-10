@@ -201,6 +201,7 @@ const ProfileSection = ({
         </div>
       )}
 
+
       {isFollowersModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -220,6 +221,34 @@ const ProfileSection = ({
           </div>
         </div>
       )}
+
+
+      {/* Renderiza o perfil conforme o tipo de usuário */}
+      {profile.type === 'professional' && renderProfessionalProfile()}
+      {profile.type === 'client' && renderClientProfile()}
+      {profile.type === 'company' && renderCompanyProfile()}
+
+      {/* Seção de atualização de senha */}
+      <h3>Update Password</h3>
+      <input
+        type="password"
+        name="password"
+        placeholder="New Password"
+        value={profile.password || ''}
+        onChange={handleInputChange}
+      />
+      <input
+        type="password"
+        name="confirmPassword"
+        placeholder="Confirm Password"
+        value={profile.confirmPassword || ''}
+        onChange={handleInputChange}
+      />
+      <button className="action-button" onClick={updateProfile} disabled={isSubmitting}>
+        {isSubmitting ? 'Updating...' : 'Update Profile'}
+      </button>
+
+      {/* Mensagem de atualização */}
 
       {updateMessage && <p className="message">{updateMessage}</p>}
     </div>
