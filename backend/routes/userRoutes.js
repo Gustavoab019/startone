@@ -287,6 +287,7 @@ router.get('/profile', protect, async (req, res) => {
       username: user.username || 'Username não definido',
       type: user.type,
       location: user.location || 'Localização não fornecida',
+      averageRating: user.averageRating || 'Média não encontrada',
       followersCount: user.followers ? user.followers.length : 0, // Contagem de seguidores
       ...profileData
     };
@@ -405,11 +406,5 @@ router.get('/:id/followers', protect, async (req, res) => {
     res.status(500).json({ message: "An error occurred while fetching followers." });
   }
 });
-
-
-
-
-
-
 
 module.exports = router;
