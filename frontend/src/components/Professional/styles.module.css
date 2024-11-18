@@ -1,0 +1,275 @@
+/* src/components/Professional/SearchUsers/styles.module.css */
+
+.section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+  
+  .searchContainer {
+    margin-bottom: 2rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+    color: #1a1a1a;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+  
+  .searchBar {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  
+  .searchIcon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+  }
+  
+  .input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    border: 2px solid #e1e1e1;
+    border-radius: 8px;
+    transition: border-color 0.3s ease;
+  }
+  
+  .input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+  
+  .resultsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  .card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  
+  .profileInfo {
+    flex-grow: 1;
+  }
+  
+  .name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin-bottom: 0.5rem;
+  }
+  
+  .rating {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #666;
+  }
+  
+  .starIcon {
+    color: #fbbf24;
+  }
+  
+  .cardContent {
+    margin: 1rem 0;
+  }
+  
+  .details {
+    margin: 1rem 0;
+  }
+  
+  .detailItem {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+  }
+  
+  .icon {
+    color: #6b7280;
+  }
+  
+  .followButton {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    border: 2px solid #2563eb;
+    transition: all 0.2s ease;
+  }
+  
+  .followButton:not(.following) {
+    background-color: #2563eb;
+    color: white;
+  }
+  
+  .followButton.following {
+    background-color: white;
+    color: #2563eb;
+  }
+  
+  .cardFooter {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+  
+  .button {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .primaryButton {
+    composes: button;
+    background-color: #2563eb;
+    color: white;
+  }
+  
+  .secondaryButton {
+    composes: button;
+    background-color: #f3f4f6;
+    color: #4b5563;
+  }
+  
+  .modalOverlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .modalOverlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  .modal {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    transform: translateY(20px);
+    transition: transform 0.3s ease;
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+  }
+  
+  .closeButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+  
+  .evaluationForm {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .formGroup label {
+    font-weight: 500;
+    color: #374151;
+  }
+  
+  .evaluationGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+  }
+  
+  .modalFooter {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .error {
+    color: #dc2626;
+    text-align: center;
+    padding: 2rem;
+    font-size: 1.1rem;
+  }
+  
+  .loading {
+    text-align: center;
+    padding: 2rem;
+    color: #4b5563;
+    font-size: 1.1rem;
+  }
+  
+  @media (max-width: 768px) {
+    .section {
+      padding: 1rem;
+    }
+  
+    .resultsGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .modal {
+      width: 95%;
+      padding: 1.5rem;
+    }
+  
+    .evaluationGrid {
+      grid-template-columns: 1fr;
+    }
+  
+    .cardFooter {
+      flex-direction: column;
+    }
+  }

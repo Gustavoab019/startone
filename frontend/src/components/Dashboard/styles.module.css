@@ -1,0 +1,81 @@
+/* src/components/Dashboard/styles.module.css */
+
+.container {
+    display: grid;
+    grid-template-rows: 60px 1fr;
+    height: 100vh;
+  }
+  
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .userMenu {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+  }
+  
+  .content {
+    padding: 20px;
+    background: #fafafa;
+    overflow-y: auto;
+  }
+  
+  .metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    margin: 20px 0;
+  }
+  
+  .metricCard {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .metricTitle {
+    margin: 0 0 10px 0;
+    color: #666;
+  }
+  
+  .metricValue {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 10px 0;
+  }
+  
+  .metricChange {
+    color: #666;
+    font-size: 14px;
+  }
+  
+  .activitySection {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  .activityList {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .activityItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .activityItem:last-child {
+    border-bottom: none;
+  }
