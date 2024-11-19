@@ -289,16 +289,12 @@ router.get('/profile', protect, async (req, res) => {
       email: user.email || profileData.email,  // Fallback para garantir que o email esteja presente
       username: user.username || 'Username não definido',  // Verifica se o username existe
       type: user.type,
-<<<<<<< HEAD
       location: user.location || 'Localização não fornecida',
-      averageRating: user.averageRating || 'Média não encontrada',
+      averageRating: user.averageRating,
       followersCount: user.followers ? user.followers.length : 0, // Contagem de seguidores
-      ...profileData
-=======
-      location: user.location || 'Localização não fornecida',  // Garante que a localização esteja preenchida
       ...profileData  // Mescla os dados do perfil específico
->>>>>>> f5367e43d581ffb2f49c3e49b603ae59a39a57bd
     };
+    
 
     // Enviar o perfil mesclado como resposta
     res.json(mergedProfile);

@@ -56,7 +56,7 @@ const Dashboard = () => {
 
   const metrics = [
     { title: 'Projetos Ativos', value: '12', change: '+2' },
-    { title: 'Média de Avaliação', value: profile?.averageRating?.toFixed(1) || '0.0', change: '0' },
+    { title: 'Média de Avaliação', value: profile?.averageRating?.toFixed(1) || '0', change: '0' },
     { title: 'Visualizações', value: new Intl.NumberFormat('pt-BR').format(1234), change: '+21%' },
     { title: 'Seguidores', value: profile?.followersCount?.toLocaleString('pt-BR') || '0', change: '0' }
   ];

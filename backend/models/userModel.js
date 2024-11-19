@@ -24,7 +24,6 @@ const userSchema = mongoose.Schema({
     enum: ['professional', 'company', 'client'], // Define o tipo de usuário
     required: true
   },
-  // Removemos as especialidades, certificações, portfólio, etc., que serão movidos para os modelos de perfil especializados
   professionalProfile: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'ProfessionalProfile',  // Referência ao modelo de perfil de profissional
@@ -57,10 +56,9 @@ const userSchema = mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'User' 
   }] // Lista de usuários que este usuário está seguindo
-  }
 }, {
   timestamps: true
-});
+}); // <- Fechamento correto do esquema aqui
 
 // Middleware para gerar o username antes de salvar o usuário
 userSchema.pre('save', function (next) {
