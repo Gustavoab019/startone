@@ -292,6 +292,7 @@ router.get('/profile', protect, async (req, res) => {
       location: user.location || 'Localização não fornecida',
       averageRating: user.averageRating,
       followersCount: user.followers ? user.followers.length : 0, // Contagem de seguidores
+      followingCount: user.following ? user.following.length : 0, // Contagem de seguindo
       ...profileData  // Mescla os dados do perfil específico
     };
     
