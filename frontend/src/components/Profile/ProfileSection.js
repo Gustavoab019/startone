@@ -21,6 +21,9 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
   // Estado para gerenciar a aba ativa
   const [activeTab, setActiveTab] = useState('info');
 
+  // Novo estado para gerenciar a quantidade de projetos
+  const [projectsCount, setProjectsCount] = useState(0);
+
   const handleUpdateProfile = async () => {
     try {
       toast.info('Updating profile...', { autoClose: 1500 });
@@ -70,7 +73,8 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
       case 'info':
         return <ProfileDetailsCard profile={profile} />;
       case 'portfolio':
-        return <PortfolioSection profile={profile} />;
+        // Passamos o callback para receber a quantidade de projetos
+        return <PortfolioSection onProjectCount={setProjectsCount} />;
       case 'evaluations':
         return <EvaluationsSection profile={profile} />;
       default:
@@ -82,12 +86,15 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
     <div className={styles.container}>
       <ToastContainer />
       <ProfileHeader
-        profile={profile}
+        profile={{
+          ...profile, // Inclui as outras informações do perfil
+          projectsCount, // Passa a quantidade de projetos para o header
+        }}
         onEdit={startEditing}
         onShowFollowers={fetchFollowers}
         isLoadingFollowers={isLoadingFollowers}
       />
-      
+
       {/* Navegação entre abas */}
       <div className={styles.tabs}>
         <button
@@ -111,9 +118,7 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
       </div>
 
       {/* Conteúdo da aba ativa */}
-      <section className={styles.tabContent}>
-        {renderTabContent()}
-      </section>
+      <section className={styles.tabContent}>{renderTabContent()}</section>
 
       {isEditing && (
         <EditProfileModal
@@ -125,10 +130,7 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
         />
       )}
       {isFollowersModalOpen && (
-        <FollowersModal
-          followers={followers}
-          onClose={() => setIsFollowersModalOpen(false)}
-        />
+        <FollowersModal followers={followers} onClose={() => setIsFollowersModalOpen(false)} />
       )}
       {updateMessage && <p className={styles.message}>{updateMessage}</p>}
     </div>

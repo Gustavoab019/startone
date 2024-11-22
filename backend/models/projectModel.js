@@ -36,8 +36,10 @@ const projectSchema = new mongoose.Schema({
   }],
   status: {
     type: String,
-    default: 'in progress', // Status inicial do projeto
+    enum: ['not started', 'in progress', 'completed', 'cancelled'], // Valores válidos
+    default: 'in progress', // Valor padrão
   },
+  
   completionDate: Date,
 }, { timestamps: true });
 

@@ -3,14 +3,15 @@ import { MapPin, User, Edit2, Star } from 'lucide-react';
 import styles from './styles.module.css';
 
 const ProfileHeader = ({ profile, onEdit, onFollowToggle, isFollowing, onShowFollowers }) => {
+  // Desestruturação das propriedades do perfil
   const {
     name = 'João Silva',
     location = 'São Paulo, SP',
     followersCount = 150,
     followingCount = 30,
     averageRating = 9.5,
-    projectsCount = 45,
-    image = '', // Imagem default caso nenhuma seja fornecida
+    projectsCount = 45, // Valor padrão para evitar falhas
+    image = '', // Imagem padrão caso nenhuma seja fornecida
   } = profile || {};
 
   return (
@@ -23,7 +24,7 @@ const ProfileHeader = ({ profile, onEdit, onFollowToggle, isFollowing, onShowFol
             alt="Profile"
             className={styles.image}
             onError={(e) => {
-              e.target.src = ''; // Caso prefira deixar vazio ao invés de fallback de Users
+              e.target.src = ''; // Substitui por vazio caso ocorra erro no carregamento da imagem
               e.target.onerror = null;
             }}
           />
@@ -32,7 +33,11 @@ const ProfileHeader = ({ profile, onEdit, onFollowToggle, isFollowing, onShowFol
             <User size={48} />
           </div>
         )}
-        <button className={styles.editImageButton} onClick={onEdit} aria-label="Editar Imagem">
+        <button
+          className={styles.editImageButton}
+          onClick={onEdit}
+          aria-label="Editar Imagem"
+        >
           <Edit2 size={16} />
         </button>
       </div>
@@ -45,7 +50,7 @@ const ProfileHeader = ({ profile, onEdit, onFollowToggle, isFollowing, onShowFol
           <span>{location}</span>
         </p>
 
-        {/* Estatísticas */}
+        {/* Estatísticas do perfil */}
         <div className={styles.stats}>
           <span className={styles.statItem} onClick={onShowFollowers}>
             <strong>{followersCount}</strong> Seguidores
@@ -63,7 +68,7 @@ const ProfileHeader = ({ profile, onEdit, onFollowToggle, isFollowing, onShowFol
         </div>
       </div>
 
-      {/* Botão Seguir */}
+      {/* Botão de seguir/seguindo */}
       <button
         className={`${styles.followButton} ${isFollowing ? styles.following : ''}`}
         onClick={onFollowToggle}
