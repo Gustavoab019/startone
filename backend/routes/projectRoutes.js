@@ -15,5 +15,7 @@ router.put('/:projectId/add-participants', protect, projectController.addPartici
 // Rota para buscar projetos de um usuário específico
 router.get('/user/:userId', protect, projectController.getProjectsByUserId);
 
+// Rota para atualizar o status do projeto
+router.put('/:projectId/status', projectController.updateProjectStatus);
 
 module.exports = router;

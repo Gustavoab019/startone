@@ -23,11 +23,17 @@ exports.getMyProjects = async (req, res) => {
 // Função para adicionar um novo projeto
 exports.addProject = async (req, res) => {
   try {
-    const { projectTitle, description, completionDate } = req.body;
+    const { projectTitle, description, completionDate, status } = req.body;
 
     // Verifique se todos os campos obrigatórios foram fornecidos
-    if (!projectTitle || !description || !completionDate) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    if (!projectTitle || !description || !completionDate || !status) {
+      return res.status(400).json({ message: 'All fields are required, including status.' });
+    }
+
+    // Lista de status válidos
+    const validStatuses = ['not started', 'in progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value.' });
     }
 
     const userId = req.user._id; // Certifique-se de usar req.user._id
@@ -37,6 +43,7 @@ exports.addProject = async (req, res) => {
       projectTitle,
       description,
       completionDate,
+      status, // Incluindo o status no novo projeto
       createdById: userId,
       createdByType: userType,
     });
@@ -48,6 +55,7 @@ exports.addProject = async (req, res) => {
     res.status(500).json({ message: 'Error adding project.' });
   }
 };
+
 
 // Função para adicionar participantes
 exports.addParticipants = async (req, res) => {
@@ -109,6 +117,38 @@ exports.getProjectsByUserId = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar projetos para o usuário:', error);
     res.status(500).json({ message: 'Erro ao buscar projetos para o usuário.' });
+  }
+};
+
+// Função para alterar o status do progresso de um projeto
+exports.updateProjectStatus = async (req, res) => {
+  try {
+    const { projectId } = req.params; // ID do projeto a ser atualizado
+    const { status } = req.body; // Novo status fornecido no corpo da requisição
+
+    // Valida se o status foi fornecido
+    if (!status) {
+      return res.status(400).json({ message: 'Status is required.' });
+    }
+
+    // Busca o projeto pelo ID
+    const project = await Project.findById(projectId);
+
+    // Verifica se o projeto existe
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    // Atualiza o status
+    project.status = status;
+
+    // Salva as alterações no banco de dados
+    const updatedProject = await project.save();
+
+    res.status(200).json(updatedProject); // Retorna o projeto atualizado
+  } catch (error) {
+    console.error('Error updating project status:', error);
+    res.status(500).json({ message: 'Error updating project status.' });
   }
 };
 
