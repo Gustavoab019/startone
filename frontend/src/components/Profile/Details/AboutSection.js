@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Edit2, Save, X, Loader } from 'lucide-react';
-import styles from './styles.module.css';
+import styles from '../Details/styles/about.module.css';
 
 const AboutSection = ({ about, onBioUpdate }) => {
-  const { bio: initialBio = 'Nenhuma descrição disponível.' } = about || {};
+  // Usando um valor padrão mais profissional
+  const { bio: initialBio = 'Compartilhe um pouco sobre você e sua experiência profissional.' } = about || {};
 
   const [bio, setBio] = useState(initialBio);
   const [editedBio, setEditedBio] = useState(initialBio);
@@ -17,8 +18,15 @@ const AboutSection = ({ about, onBioUpdate }) => {
   }, [initialBio]);
 
   const handleSave = async () => {
-    if (!editedBio.trim()) {
+    const trimmedBio = editedBio.trim();
+    
+    if (!trimmedBio) {
       setError('A descrição não pode estar vazia.');
+      return;
+    }
+
+    if (trimmedBio === bio) {
+      setIsEditing(false);
       return;
     }
 
@@ -26,13 +34,14 @@ const AboutSection = ({ about, onBioUpdate }) => {
     setError(null);
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/users/profile/bio', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ bio: editedBio }),
+        body: JSON.stringify({ bio: trimmedBio }),
       });
 
       if (!response.ok) {
@@ -42,14 +51,13 @@ const AboutSection = ({ about, onBioUpdate }) => {
       const data = await response.json();
       setBio(data.profile.bio);
       setIsEditing(false);
-      
-      // Se houver uma função de callback para atualização
+
       if (onBioUpdate) {
         onBioUpdate(data.profile.bio);
       }
     } catch (error) {
-      setError('Erro ao salvar. Tente novamente.');
       console.error('Erro ao salvar a bio:', error);
+      setError('Não foi possível salvar as alterações. Tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -80,10 +88,11 @@ const AboutSection = ({ about, onBioUpdate }) => {
             value={editedBio}
             onChange={handleChange}
             maxLength={500}
-            placeholder="Digite sua bio..."
+            placeholder="Compartilhe sua experiência profissional, habilidades e objetivos..."
             disabled={isSaving}
+            autoFocus
           />
-          
+
           <div className={styles.charCount}>
             {editedBio.length}/500 caracteres
           </div>
@@ -98,7 +107,7 @@ const AboutSection = ({ about, onBioUpdate }) => {
             <button
               className={styles.saveButton}
               onClick={handleSave}
-              disabled={isSaving || !editedBio.trim()}
+              disabled={isSaving || !editedBio.trim() || editedBio.trim() === bio}
             >
               {isSaving ? (
                 <>
@@ -116,6 +125,7 @@ const AboutSection = ({ about, onBioUpdate }) => {
               className={styles.cancelButton}
               onClick={handleCancel}
               disabled={isSaving}
+              type="button"
             >
               <X size={16} />
               Cancelar
@@ -131,6 +141,7 @@ const AboutSection = ({ about, onBioUpdate }) => {
             className={styles.editButton}
             onClick={() => setIsEditing(true)}
             aria-label="Editar descrição"
+            type="button"
           >
             <Edit2 size={16} />
           </button>

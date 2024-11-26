@@ -1,0 +1,182 @@
+/* projects.module.css */
+@import './variables.module.css';
+
+.recentProjectsSection {
+  position: relative;
+  padding: var(--spacing-xl);
+  background: white;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition-normal);
+  margin-bottom: var(--spacing-xl);
+  overflow: hidden;
+}
+
+.recentProjectsSection::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), transparent);
+}
+
+.recentProjectsSection:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xl);
+}
+
+.projectsTitle {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  position: relative;
+}
+
+.projectsTitle::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, var(--color-primary-light) 0%, transparent 100%);
+  margin-left: var(--spacing-xs);
+}
+
+.projectsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min-width), 1fr));
+  gap: var(--grid-gap);
+  margin-top: var(--spacing-lg);
+}
+
+.projectCard {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  border: 1px solid var(--color-border);
+  transition: var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.projectCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+  transform: scaleX(0);
+  transition: var(--transition-normal);
+  transform-origin: left;
+}
+
+.projectCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.projectCard:hover::before {
+  transform: scaleX(1);
+}
+
+.projectTitle {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.projectSubtitle {
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+}
+
+.projectMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.projectDate {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--text-sm);
+  color: var(--color-text-light);
+}
+
+.statusTag {
+  padding: 0.35rem 0.75rem;
+  border-radius: 2rem;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.statusInProgress {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.statusConcluido {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.viewMoreButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.viewMoreButton:hover {
+  background: var(--color-primary);
+  color: white;
+  transform: translateX(2px);
+}
+
+.viewMoreButton svg {
+  transition: transform var(--transition-fast);
+}
+
+.viewMoreButton:hover svg {
+  transform: translateX(2px);
+}
+
+@media (max-width: 640px) {
+  .sectionHeader {
+    flex-direction: column;
+    gap: var(--spacing-md);
+    align-items: flex-start;
+  }
+
+  .viewMoreButton {
+    width: 100%;
+    justify-content: center;
+  }
+}
