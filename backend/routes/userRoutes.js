@@ -412,4 +412,54 @@ router.get('/:id/followers', protect, async (req, res) => {
   }
 });
 
+// Atualizar a bio do perfil profissional
+router.put('/profile/bio', protect, async (req, res) => {
+  try {
+    const { bio } = req.body;
+
+    // Validações básicas
+    if (!bio) {
+      return res.status(400).json({ message: 'Bio is required.' });
+    }
+    if (bio.length > 500) {
+      return res.status(400).json({ message: 'Bio must not exceed 500 characters.' });
+    }
+
+    // Busca o perfil profissional
+    const profile = await ProfessionalProfileModel.findOne({ userId: req.user._id });
+
+    if (!profile) {
+      return res.status(404).json({ message: 'Professional profile not found.' });
+    }
+
+    // Atualiza a bio
+    profile.bio = bio;
+    await profile.save();
+
+    // Busca os dados do usuário para retornar junto com o perfil
+    const user = await User.findById(req.user._id).select('-password'); // Exclui o campo senha por segurança
+
+    res.status(200).json({
+      message: 'Bio updated successfully.',
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        type: user.type,
+        location: user.location
+      },
+      profile: {
+        bio: profile.bio,
+        specialties: profile.specialties,
+        experienceYears: profile.experienceYears
+      }
+    });
+  } catch (error) {
+    console.error('Error updating bio:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+
+
 module.exports = router;

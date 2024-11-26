@@ -1,37 +1,65 @@
 import React, { useState } from 'react';
 import ProfileHeader from './Header/ProfileHeader';
-import ProfileDetailsCard from './Details/ProfileDetailsCard';
+import AboutSection from './Details/AboutSection';
 import EditProfileModal from './Modals/EditProfileModal';
 import FollowersModal from './Modals/FollowersModal';
 import ToastContainer from './Toasts/ToastContainer';
+import PortfolioSection from '../Portfolio/PortfolioSection';
+import EvaluationsSection from '../Evaluations/EvaluationsSection';
 import styles from './styles.module.css';
 import { toast } from 'react-toastify';
 
-// Importação de novos componentes
-import PortfolioSection from '../Portfolio/PortfolioSection';
-import EvaluationsSection from '../Evaluations/EvaluationsSection';
-
-const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmitting, updateMessage }) => {
+const ProfileSection = ({ profile: initialProfile, handleInputChange, updateProfile, isSubmitting, updateMessage }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isFollowersModalOpen, setIsFollowersModalOpen] = useState(false);
   const [followers, setFollowers] = useState([]);
   const [originalProfile, setOriginalProfile] = useState({});
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
-
-  // Estado para gerenciar a aba ativa
   const [activeTab, setActiveTab] = useState('info');
-
-  // Novo estado para gerenciar a quantidade de projetos
   const [projectsCount, setProjectsCount] = useState(0);
+  
+  // Novo estado para gerenciar o perfil localmente
+  const [profile, setProfile] = useState(initialProfile);
+
+  // Função para atualizar a bio no perfil
+  const handleBioUpdate = async (newBio) => {
+    try {
+      const response = await fetch('/api/users/profile/bio', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ bio: newBio }),
+      });
+
+      if (!response.ok) throw new Error('Erro ao atualizar a bio');
+
+      const data = await response.json();
+      
+      // Atualiza o perfil local com a nova bio
+      setProfile(prevProfile => ({
+        ...prevProfile,
+        bio: data.profile.bio
+      }));
+
+      toast.success('Bio atualizada com sucesso!');
+      return true;
+    } catch (error) {
+      console.error('Erro ao salvar a bio:', error);
+      toast.error('Erro ao atualizar a bio. Tente novamente.');
+      return false;
+    }
+  };
 
   const handleUpdateProfile = async () => {
     try {
-      toast.info('Updating profile...', { autoClose: 1500 });
+      toast.info('Atualizando perfil...', { autoClose: 1500 });
       await updateProfile();
-      toast.success('Profile updated successfully!');
+      toast.success('Perfil atualizado com sucesso!');
       setIsEditing(false);
     } catch (error) {
-      toast.error('Error updating profile. Please try again.');
+      toast.error('Erro ao atualizar perfil. Tente novamente.');
     }
   };
 
@@ -50,7 +78,7 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
       setFollowers(data.followers);
       setIsFollowersModalOpen(true);
     } catch (error) {
-      toast.error('Error fetching followers.');
+      toast.error('Erro ao carregar seguidores.');
     } finally {
       setIsLoadingFollowers(false);
     }
@@ -71,14 +99,18 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
   const renderTabContent = () => {
     switch (activeTab) {
       case 'info':
-        return <ProfileDetailsCard profile={profile} />;
+        return (
+          <AboutSection 
+            about={{ bio: profile.bio }} 
+            onBioUpdate={handleBioUpdate}
+          />
+        );
       case 'portfolio':
-        // Passamos o callback para receber a quantidade de projetos
         return <PortfolioSection onProjectCount={setProjectsCount} />;
       case 'evaluations':
         return <EvaluationsSection profile={profile} />;
       default:
-        return <ProfileDetailsCard profile={profile} />;
+        return <AboutSection about={{ bio: profile.bio }} onBioUpdate={handleBioUpdate} />;
     }
   };
 
@@ -87,15 +119,14 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
       <ToastContainer />
       <ProfileHeader
         profile={{
-          ...profile, // Inclui as outras informações do perfil
-          projectsCount, // Passa a quantidade de projetos para o header
+          ...profile,
+          projectsCount,
         }}
         onEdit={startEditing}
         onShowFollowers={fetchFollowers}
         isLoadingFollowers={isLoadingFollowers}
       />
 
-      {/* Navegação entre abas */}
       <div className={styles.tabs}>
         <button
           className={`${styles.tabButton} ${activeTab === 'info' ? styles.active : ''}`}
@@ -117,7 +148,6 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
         </button>
       </div>
 
-      {/* Conteúdo da aba ativa */}
       <section className={styles.tabContent}>{renderTabContent()}</section>
 
       {isEditing && (
@@ -130,7 +160,10 @@ const ProfileSection = ({ profile, handleInputChange, updateProfile, isSubmittin
         />
       )}
       {isFollowersModalOpen && (
-        <FollowersModal followers={followers} onClose={() => setIsFollowersModalOpen(false)} />
+        <FollowersModal 
+          followers={followers} 
+          onClose={() => setIsFollowersModalOpen(false)} 
+        />
       )}
       {updateMessage && <p className={styles.message}>{updateMessage}</p>}
     </div>

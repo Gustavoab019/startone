@@ -112,6 +112,45 @@ const PortfolioSection = ({ onProjectCount }) => {
     }
   };
 
+  // Função para atualizar o projeto
+  const updateProject = async (updatedProject) => {
+    try {
+      const token = localStorage.getItem('token'); // Certifique-se de que o token é válido
+      const response = await fetch(
+        `http://localhost:5000/api/projects/${updatedProject._id}`,
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedProject), // Envia os dados atualizados para a API
+        }
+      );
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Response Error:', errorData); // Log da resposta de erro
+        throw new Error('Failed to update project');
+      }
+  
+      const data = await response.json();
+      console.log('Project updated successfully:', data);
+  
+      // Atualiza o estado do projeto localmente
+      setProjects((prevProjects) =>
+        prevProjects.map((project) =>
+          project._id === updatedProject._id ? data.project : project
+        )
+      );
+      return data.project; // Retorna o projeto atualizado
+    } catch (error) {
+      console.error('Error updating project:', error);
+      throw error; // Lança o erro para que o componente `ProjectCard` possa tratá-lo
+    }
+  };
+  
+
   return (
     <div className={styles.section}>
       <h3 className={styles.title}>Projects</h3>
@@ -125,13 +164,15 @@ const PortfolioSection = ({ onProjectCount }) => {
               <ProjectCard
                 key={project._id}
                 project={project}
-                setSelectedProject={setSelectedProject} // Passando setSelectedProject para o ProjectCard
+                setSelectedProject={setSelectedProject}
+                onEdit={updateProject} // Passa a função de atualização
               />
             ))
           ) : (
             <p>No projects added.</p>
           )}
-        </div>
+      </div>
+
       )}
 
       <button onClick={() => setIsAddProjectModalOpen(true)}>Add New Project</button>

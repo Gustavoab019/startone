@@ -152,3 +152,30 @@ exports.updateProjectStatus = async (req, res) => {
   }
 };
 
+// Atualiza os dados do projeto
+exports.updateProject = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { projectTitle, description, completionDate, status } = req.body;
+
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: 'Project not found.' });
+    }
+
+    if (projectTitle) project.projectTitle = projectTitle;
+    if (description) project.description = description;
+    if (completionDate) project.completionDate = completionDate;
+    if (status) project.status = status;
+
+    const updatedProject = await project.save();
+
+    res.status(200).json({ message: 'Project updated successfully', project: updatedProject });
+  } catch (error) {
+    console.error('Error updating project:', error);
+    res.status(500).json({ message: 'Error updating project.' });
+  }
+};
+
+
