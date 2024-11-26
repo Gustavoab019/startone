@@ -1,104 +1,152 @@
 /* src/components/Evaluations/styles.module.css */
 
 .section {
-    padding: 20px;
-    background-color: #f9f9f9;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-    font-family: 'Arial', sans-serif;
-    color: #333;
+  padding: 2rem;
+  background-color: #f8fafc;
+  min-height: 100vh;
+  color: #334155;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
+  color: #1e293b;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
+.averageRatingCard {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.averageRatingTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: #1e293b;
+  margin: 1.5rem 0 1rem;
+  font-weight: 600;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.cardTitle {
+  font-size: 1.125rem;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.cardText {
+  color: #475569;
+  line-height: 1.5;
+  margin: 0.5rem 0;
+}
+
+.categories,
+.participants {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+  border: 1px solid #e2e8f0;
+}
+
+.categories p {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.categories p:last-child {
+  border-bottom: none;
+}
+
+.participantsTitle {
+  color: #1e293b;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+[data-score="high"] {
+  color: #0f766e;
+  font-weight: 500;
+}
+
+[data-score="medium"] {
+  color: #b45309;
+  font-weight: 500;
+}
+
+[data-score="low"] {
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.loadingContainer,
+.errorContainer {
+  text-align: center;
+  padding: 2rem;
+  color: #475569;
+}
+
+.errorContainer {
+  background: #fef2f2;
+  border-radius: 6px;
+  border: 1px solid #fee2e2;
+}
+
+.errorText {
+  color: #b91c1c;
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 1rem;
   }
-  
-  .title {
-    font-size: 24px;
-    margin-bottom: 15px;
-    color: #222;
-  }
-  
-  .averageRatingCard {
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .averageRatingTitle {
-    margin: 0;
-    font-size: 18px;
-  }
-  
-  .subtitle {
-    margin-top: 20px;
-    font-size: 20px;
-    color: #444;
-  }
-  
+
   .cardsGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
+    grid-template-columns: 1fr;
   }
-  
-  .card {
-    background-color: #fff;
-    padding: 15px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+@media print {
+  .section {
+    background: none;
   }
-  
-  .cardTitle {
-    margin: 0;
-    font-size: 16px;
-    color: #555;
-    margin-bottom: 8px;
+
+  .card,
+  .averageRatingCard {
+    box-shadow: none;
+    border: 1px solid #e2e8f0;
   }
-  
-  .cardText {
-    margin: 5px 0;
-    font-size: 14px;
-  }
-  
-  .categories, 
-  .participants {
-    margin-top: 15px;
-    background-color: #f1f1f1;
-    padding: 10px;
-    border-radius: 5px;
-  }
-  
-  .categories p, 
-  .participants p {
-    font-size: 14px;
-    color: #666;
-  }
-  
-  .participantsTitle {
-    margin: 0 0 10px 0;
-    font-size: 16px;
-    color: #444;
-  }
-  
-  @media (max-width: 768px) {
-    .cardsGrid {
-      grid-template-columns: 1fr;
-    }
-  
-    .section {
-      padding: 10px;
-    }
-  
-    .averageRatingCard {
-      padding: 10px;
-    }
-  
-    .card {
-      padding: 10px;
-    }
-  
-    .subtitle, 
-    .averageRatingTitle {
-      font-size: 18px;
-    }
-  }
+}

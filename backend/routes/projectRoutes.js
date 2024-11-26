@@ -18,4 +18,8 @@ router.get('/user/:userId', protect, projectController.getProjectsByUserId);
 // Rota para atualizar o status do projeto
 router.put('/:projectId/status', projectController.updateProjectStatus);
 
+// Rota para atualizar projetos
+router.put('/:projectId', protect, projectController.updateProject);
+
+
 module.exports = router;

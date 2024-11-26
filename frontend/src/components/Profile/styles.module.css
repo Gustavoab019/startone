@@ -1,27 +1,20 @@
-/* Variáveis globais com tema claro/escuro */
 :root {
-  --color-primary: #3b82f6;
-  --color-primary-hover: #2563eb;
-  --color-neutral-light: #f9fafb;
-  --color-neutral-dark: #1f2937;
-  --color-success: #6ee7b7;
-  --color-error: #fecaca;
-  --color-text: #333;
+  --color-primary: #FF6B00;
+  --color-primary-hover: #FF8534;
+  --color-neutral-dark: #2C3E50;
+  --color-success: #22C55E;
+  --color-error: #EF4444;
+  --color-text: #2C3E50;
+  --color-accent: #FFF4ED;
 
-  --spacing-xs: 4px;
   --spacing-sm: 8px;
   --spacing-md: 16px;
   --spacing-lg: 24px;
 
   --font-family: 'Inter', sans-serif;
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem;
-
   --border-radius: 8px;
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Reset e base */
 * {
   margin: 0;
   padding: 0;
@@ -30,11 +23,9 @@
 
 body {
   font-family: var(--font-family);
-  background-color: var(--color-neutral-light);
   color: var(--color-text);
 }
 
-/* Container principal */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -44,13 +35,9 @@ body {
   gap: var(--spacing-md);
 }
 
-/* Sistema de Abas */
 .tabs {
   display: flex;
-  gap: var(--spacing-xs);
-  background: var(--color-neutral-light);
-  padding: var(--spacing-sm);
-  border-radius: var(--border-radius);
+  gap: var(--spacing-sm);
 }
 
 .tabButton {
@@ -59,66 +46,49 @@ body {
   background: none;
   border: none;
   color: var(--color-text);
-  text-align: center;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  border-radius: var(--border-radius);
+  transition: background 0.2s, color 0.2s;
 }
 
 .tabButton.active {
   background: var(--color-primary);
-  color: white;
-  border-radius: var(--border-radius);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(255, 107, 0, 0.2);
 }
 
-.tabButton:hover {
-  background: var(--color-primary-hover);
-  color: white;
+.tabButton:hover:not(.active) {
+  background: var(--color-accent);
+  color: var(--color-primary);
 }
 
-/* Conteúdo */
 .tabContent {
-  background: var(--color-neutral-light);
-  padding: var(--spacing-lg);
-  border-radius: var(--border-radius);
-  box-shadow: var(--shadow);
   min-height: 300px;
 }
 
-/* Mensagens de feedback */
 .message {
   padding: var(--spacing-md);
   border-radius: var(--border-radius);
   text-align: center;
-  font-size: var(--font-size-sm);
 }
 
 .message.success {
-  background-color: var(--color-success);
-  color: #065f46;
+  background-color: #DCFCE7;
+  color: #166534;
 }
 
 .message.error {
-  background-color: var(--color-error);
-  color: #991b1b;
+  background-color: #FEE2E2;
+  color: #991B1B;
 }
 
-/* Responsividade */
 @media (max-width: 768px) {
-  .container {
-    padding: var(--spacing-md);
-  }
-
   .tabs {
     flex-direction: column;
-    gap: var(--spacing-sm);
   }
 
   .tabButton {
-    padding: var(--spacing-sm);
-  }
-
-  .tabContent {
-    padding: var(--spacing-md);
+    width: 100%;
   }
 }

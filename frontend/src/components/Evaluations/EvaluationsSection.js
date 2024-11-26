@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import styles from './styles.module.css';
 
+const LoadingIndicator = () => (
+  <div className={styles.loadingContainer}>
+    <p className={styles.loadingText}>Loading evaluations...</p>
+  </div>
+);
+
+const ErrorDisplay = ({ message }) => (
+  <div className={styles.errorContainer}>
+    <p className={styles.errorText}>{message}</p>
+  </div>
+);
+
 const EvaluationsSection = () => {
   const [evaluationsData, setEvaluationsData] = useState([]);
   const [categoryAverages, setCategoryAverages] = useState(null);
@@ -40,8 +52,14 @@ const EvaluationsSection = () => {
     fetchData();
   }, []);
 
-  if (loading) return <p>Loading evaluations...</p>;
-  if (error) return <p>{error}</p>;
+  const getScoreLevel = (score) => {
+    if (score >= 8) return 'high';
+    if (score >= 6) return 'medium';
+    return 'low';
+  };
+
+  if (loading) return <LoadingIndicator />;
+  if (error) return <ErrorDisplay message={error} />;
 
   return (
     <div className={styles.section}>
@@ -49,18 +67,30 @@ const EvaluationsSection = () => {
 
       <div className={styles.averageRatingCard}>
         <h4 className={styles.averageRatingTitle}>
-          General Average Rating: {averageRating ? averageRating.toFixed(2) : 'Not rated yet'}
+          General Average Rating:{' '}
+          {averageRating ? (
+            <span data-score={getScoreLevel(averageRating)}>
+              {averageRating.toFixed(2)}
+            </span>
+          ) : (
+            'Not rated yet'
+          )}
         </h4>
       </div>
 
       {categoryAverages && (
         <>
           <h4 className={styles.subtitle}>Category Averages:</h4>
-          {Object.entries(categoryAverages).map(([category, score]) => (
-            <p key={category} className={styles.cardText}>
-              {category}: {score.toFixed(2)}
-            </p>
-          ))}
+          <div className={styles.categories}>
+            {Object.entries(categoryAverages).map(([category, score]) => (
+              <p key={category} className={styles.cardText}>
+                {category}{' '}
+                <span data-score={getScoreLevel(score)}>
+                  {score.toFixed(2)}
+                </span>
+              </p>
+            ))}
+          </div>
         </>
       )}
 
@@ -82,7 +112,10 @@ const EvaluationsSection = () => {
               <div className={styles.categories}>
                 {Object.entries(evaluation.categories).map(([category, score]) => (
                   <p key={category} className={styles.cardText}>
-                    {category}: {score || 'N/A'}
+                    {category}{' '}
+                    <span data-score={getScoreLevel(score)}>
+                      {score || 'N/A'}
+                    </span>
                   </p>
                 ))}
               </div>
