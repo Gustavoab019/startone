@@ -1,13 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ProjectCard from './ProjectCard';
-import AddProjectModal from './Modals/AddProjectModal'; // Modal para adicionar projeto
-import AddParticipantsModal from './Modals/AddParticipantsModal'; // Modal para adicionar participantes
+import AddProjectModal from './Modals/AddProjectModal';
+import AddParticipantsModal from './Modals/AddParticipantsModal';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './styles.module.css';
 
 const PortfolioSection = ({ onProjectCount }) => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [projects, setProjects] = useState([]);
   const [fetchError, setFetchError] = useState(null);
-  const [selectedProject, setSelectedProject] = useState(''); // Seleciona o projeto
+  const [selectedProject, setSelectedProject] = useState('');
   const [participants, setParticipants] = useState({ professionals: '', clients: '' });
   const [participantMessage, setParticipantMessage] = useState('');
   const [isSubmittingParticipants, setIsSubmittingParticipants] = useState(false);
@@ -18,11 +22,14 @@ const PortfolioSection = ({ onProjectCount }) => {
     completionDate: '',
   });
 
-  // Estados para controlar as modais
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddParticipantsModalOpen, setIsAddParticipantsModalOpen] = useState(false);
 
-  // Função para buscar projetos do usuário, agora com useCallback
+  // Função para voltar à página anterior
+  const handleBack = () => {
+    navigate('/profile');
+  };
+
   const fetchProjects = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -37,7 +44,6 @@ const PortfolioSection = ({ onProjectCount }) => {
       const data = await response.json();
       setProjects(data);
 
-      // Atualiza a quantidade de projetos no componente pai
       if (onProjectCount) {
         onProjectCount(data.length);
       }
@@ -48,13 +54,12 @@ const PortfolioSection = ({ onProjectCount }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [onProjectCount]); // Incluímos `onProjectCount` como dependência
+  }, [onProjectCount]);
 
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]); // Incluímos `fetchProjects` como dependência
+  }, [fetchProjects]);
 
-  // Função para adicionar um novo projeto
   const addProject = async (projectData) => {
     try {
       const token = localStorage.getItem('token');
@@ -70,7 +75,6 @@ const PortfolioSection = ({ onProjectCount }) => {
       const data = await response.json();
       setProjects((prev) => [...prev, data]);
 
-      // Atualiza a quantidade de projetos no componente pai
       if (onProjectCount) {
         onProjectCount(projects.length + 1);
       }
@@ -81,7 +85,6 @@ const PortfolioSection = ({ onProjectCount }) => {
     }
   };
 
-  // Função para adicionar participantes ao projeto
   const addParticipants = async () => {
     if (!participants.professionals && !participants.clients) {
       setParticipantMessage('Please provide at least one professional or client.');
@@ -112,10 +115,9 @@ const PortfolioSection = ({ onProjectCount }) => {
     }
   };
 
-  // Função para atualizar o projeto
   const updateProject = async (updatedProject) => {
     try {
-      const token = localStorage.getItem('token'); // Certifique-se de que o token é válido
+      const token = localStorage.getItem('token');
       const response = await fetch(
         `http://localhost:5000/api/projects/${updatedProject._id}`,
         {
@@ -124,36 +126,46 @@ const PortfolioSection = ({ onProjectCount }) => {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updatedProject), // Envia os dados atualizados para a API
+          body: JSON.stringify(updatedProject),
         }
       );
   
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('API Response Error:', errorData); // Log da resposta de erro
+        console.error('API Response Error:', errorData);
         throw new Error('Failed to update project');
       }
   
       const data = await response.json();
       console.log('Project updated successfully:', data);
   
-      // Atualiza o estado do projeto localmente
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
           project._id === updatedProject._id ? data.project : project
         )
       );
-      return data.project; // Retorna o projeto atualizado
+      return data.project;
     } catch (error) {
       console.error('Error updating project:', error);
-      throw error; // Lança o erro para que o componente `ProjectCard` possa tratá-lo
+      throw error;
     }
   };
-  
 
   return (
     <div className={styles.section}>
-      <h3 className={styles.title}>Projects</h3>
+      <div className={styles.sectionHeader}>
+        {location.pathname === '/portfolio' && (
+          <button 
+            onClick={handleBack}
+            className={styles.backButton}
+          >
+            <ArrowLeft size={20} />
+            Voltar
+          </button>
+        )}
+        <h3 className={styles.title}>Projects</h3>
+      </div>
+
       {fetchError && <p className={styles.error}>{fetchError}</p>}
       {isLoading ? (
         <p>Loading projects...</p>
@@ -165,18 +177,16 @@ const PortfolioSection = ({ onProjectCount }) => {
                 key={project._id}
                 project={project}
                 setSelectedProject={setSelectedProject}
-                onEdit={updateProject} // Passa a função de atualização
+                onEdit={updateProject}
               />
             ))
           ) : (
             <p>No projects added.</p>
           )}
-      </div>
-
+        </div>
       )}
 
       <button onClick={() => setIsAddProjectModalOpen(true)}>Add New Project</button>
-      {/* Modal para adicionar projeto */}
       <AddProjectModal
         isOpen={isAddProjectModalOpen}
         onClose={() => setIsAddProjectModalOpen(false)}
@@ -186,7 +196,6 @@ const PortfolioSection = ({ onProjectCount }) => {
       />
 
       <button onClick={() => setIsAddParticipantsModalOpen(true)}>Add Participants to Project</button>
-      {/* Modal para adicionar participantes */}
       <AddParticipantsModal
         isOpen={isAddParticipantsModalOpen}
         onClose={() => setIsAddParticipantsModalOpen(false)}
@@ -195,9 +204,9 @@ const PortfolioSection = ({ onProjectCount }) => {
         setParticipants={setParticipants}
         participantMessage={participantMessage}
         isSubmittingParticipants={isSubmittingParticipants}
-        projects={projects} // Passando a lista de projetos
-        selectedProject={selectedProject} // Passando o projeto selecionado
-        setSelectedProject={setSelectedProject} // Passando a função para setar o projeto selecionado
+        projects={projects}
+        selectedProject={selectedProject}
+        setSelectedProject={setSelectedProject}
       />
     </div>
   );
