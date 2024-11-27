@@ -14,6 +14,7 @@ const rankingRoutes = require('./routes/rankingRoutes');
 const companyPanelRoutes = require('./routes/companyPanelRoutes');
 const companyRoutes = require('./routes/companyRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const VehicleRoutes = require('./routes/vehicleRoutes')
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api/company', companyPanelRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/participants', evaluationRoutes);
+app.use('/api/vehicles', VehicleRoutes);
 
 // Porta do servidor
 const PORT = process.env.PORT || 5000;

@@ -1,6 +1,12 @@
 import React from 'react';
-import { MapPin, User, Edit2, Star, BadgeCheck } from 'lucide-react';
+import { MapPin, User, Edit2, Star, BadgeCheck, Loader2 } from 'lucide-react';
 import styles from './styles.module.css';
+
+const LoadingSpinner = () => (
+  <div className={styles.spinnerContainer}>
+    <Loader2 className={styles.spinner} />
+  </div>
+);
 
 const ProfileHeader = ({
   profile = {},
@@ -8,18 +14,19 @@ const ProfileHeader = ({
   onFollowToggle,
   isFollowing = false,
   onShowFollowers,
+  isLoading = false
 }) => {
   const {
-    name = 'João Silva',
-    location = 'São Paulo, SP',
-    followersCount = 0,
-    followingCount = 0,
-    averageRating = 0,
-    projectsCount = 0,
+    name,
+    location,
+    followersCount,
+    followingCount,
+    averageRating,
+    projectsCount,
     specialties = [],
-    experience = 0,
-    verified = false,
-    image = '',
+    experience,
+    verified,
+    image,
   } = profile;
 
   return (
@@ -60,58 +67,98 @@ const ProfileHeader = ({
       {/* Container das Informações */}
       <div className={styles.info}>
         <div className={styles.nameContainer}>
-          <h1 className={styles.name}>{name}</h1>
-          {verified && (
-            <span className={styles.verifiedTag}>
-              <BadgeCheck size={14} />
-              Profissional Verificado
-            </span>
+          {!name || isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <h1 className={styles.name}>{name}</h1>
+              {verified && (
+                <span className={styles.verifiedTag}>
+                  <BadgeCheck size={14} />
+                  Profissional Verificado
+                </span>
+              )}
+            </>
           )}
         </div>
 
         <div className={styles.locationContainer}>
-          <MapPin size={16} />
-          <span>{location}</span>
-          {experience > 0 && (
+          {!location || isLoading ? (
+            <LoadingSpinner />
+          ) : (
             <>
-              <span className={styles.dot}>•</span>
-              <span>{experience} anos de experiência</span>
+              <MapPin size={16} />
+              <span>{location}</span>
+              {experience > 0 && (
+                <>
+                  <span className={styles.dot}>•</span>
+                  <span>{experience} anos de experiência</span>
+                </>
+              )}
             </>
           )}
         </div>
 
         {specialties.length > 0 && (
           <div className={styles.specialties}>
-            {specialties.map((specialty, index) => (
-              <span key={index} className={styles.specialty}>
-                {specialty}
-              </span>
-            ))}
+            {isLoading ? (
+              <LoadingSpinner />
+            ) : (
+              specialties.map((specialty, index) => (
+                <span key={index} className={styles.specialty}>
+                  {specialty}
+                </span>
+              ))
+            )}
           </div>
         )}
 
         <div className={styles.metrics}>
-          <div className={styles.rating}>
-            <Star size={20} className={styles.starIcon} />
-            <span className={styles.ratingValue}>
-              {averageRating.toFixed(1)}
-            </span>
-          </div>
+          {!averageRating || isLoading ? (
+            <LoadingSpinner />
+          ) : (
+            <>
+              <div className={styles.rating}>
+                <Star size={20} className={styles.starIcon} />
+                <span className={styles.ratingValue}>
+                  {averageRating.toFixed(1)}
+                </span>
+              </div>
 
-          <div className={styles.stats}>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{followersCount}</span>
-              <span className={styles.statLabel}>Seguidores</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{followingCount}</span>
-              <span className={styles.statLabel}>Seguindo</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{projectsCount}</span>
-              <span className={styles.statLabel}>Projetos</span>
-            </div>
-          </div>
+              <div className={styles.stats}>
+                <div className={styles.statItem}>
+                  {followersCount === undefined || isLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      <span className={styles.statValue}>{followersCount}</span>
+                      <span className={styles.statLabel}>Seguidores</span>
+                    </>
+                  )}
+                </div>
+                <div className={styles.statItem}>
+                  {followingCount === undefined || isLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      <span className={styles.statValue}>{followingCount}</span>
+                      <span className={styles.statLabel}>Seguindo</span>
+                    </>
+                  )}
+                </div>
+                <div className={styles.statItem}>
+                  {projectsCount === undefined || isLoading ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      <span className={styles.statValue}>{projectsCount}</span>
+                      <span className={styles.statLabel}>Projetos</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -120,8 +167,13 @@ const ProfileHeader = ({
           isFollowing ? styles.following : ''
         }`}
         onClick={onFollowToggle}
+        disabled={isLoading}
       >
-        {isFollowing ? 'Seguindo' : 'Seguir'}
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          isFollowing ? 'Seguindo' : 'Seguir'
+        )}
       </button>
     </header>
   );
