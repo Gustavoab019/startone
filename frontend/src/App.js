@@ -5,6 +5,7 @@ import Profile from './components/Dashboard/DashboardLayout';
 import EvaluationForm from './components/Evaluations/EvaluationForm';
 import PortfolioSection from './components/Portfolio/PortfolioSection';
 import EvaluationsSection from './components/Evaluations/EvaluationsSection';
+import DashboardVehicles from './components/Vehicles/DashboardVehicle';
 
 
 
@@ -18,6 +19,9 @@ const App = () => {
         <Route path="/evaluate/:id" element={<EvaluationForm />} />
         <Route path="/portfolio" element={<PortfolioSection />} />
         <Route path="/evaluations" element={<EvaluationsSection />} />
+        <Route path="/vehicles" element={<DashboardVehicles />} />
+
+
 
 
 

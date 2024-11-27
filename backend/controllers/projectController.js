@@ -1,5 +1,6 @@
 const Project = require('../models/projectModel.js');
 const User = require('../models/userModel');
+const Vehicle = require('../models/VehicleModel');
 
 // Função para buscar projetos do usuário
 exports.getMyProjects = async (req, res) => {
@@ -178,4 +179,24 @@ exports.updateProject = async (req, res) => {
   }
 };
 
+// Função para listar veículos associados a um projeto
+exports.getProjectVehicles = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // Busca veículos que estão associados ao projeto
+    const vehicles = await Vehicle.find({ projectAssociated: projectId });
+
+    // Se não houver veículos associados, retorna um array vazio
+    if (!vehicles || vehicles.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    // Retorna os veículos encontrados
+    res.status(200).json(vehicles);
+  } catch (error) {
+    console.error('Erro ao buscar veículos para o projeto:', error);
+    res.status(500).json({ message: 'Erro ao buscar veículos para o projeto.' });
+  }
+};
 

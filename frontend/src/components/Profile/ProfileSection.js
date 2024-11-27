@@ -19,7 +19,7 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
   const [followers, setFollowers] = useState([]);
   const [originalProfile, setOriginalProfile] = useState({});
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab ] = useState('info');
   const [projectsCount, setProjectsCount] = useState(0);
 
   const fetchProjects = useCallback(async () => {
@@ -197,26 +197,6 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
         isLoadingFollowers={isLoadingFollowers}
       />
 
-      <div className={styles.tabs}>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'info' ? styles.active : ''}`}
-          onClick={() => setActiveTab('info')}
-        >
-          Informações
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'portfolio' ? styles.active : ''}`}
-          onClick={() => setActiveTab('portfolio')}
-        >
-          Portfólio
-        </button>
-        <button
-          className={`${styles.tabButton} ${activeTab === 'evaluations' ? styles.active : ''}`}
-          onClick={() => setActiveTab('evaluations')}
-        >
-          Avaliações
-        </button>
-      </div>
 
       <section className={styles.tabContent}>
         {profile && renderTabContent()}
