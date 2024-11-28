@@ -1,5 +1,5 @@
-// DashboardVehicles.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import PropTypes from "prop-types";
 import axios from "axios";
 import VehicleSummary from "./VehicleSummary";
 import VehicleList from "./VehicleList";
@@ -9,113 +9,101 @@ import styles from "./styles.module.css";
 const DashboardVehicles = () => {
   const [vehicles, setVehicles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [fetchError, setFetchError] = useState(null);
+  const [error, setError] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const fetchVehicles = async () => {
+  const getAuthConfig = () => {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("Authentication required");
+    return { headers: { Authorization: `Bearer ${token}` } };
+  };
+
+  const fetchVehicles = useCallback(async () => {
     setIsLoading(true);
-    setFetchError(null);
-
+    setError(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado. Token não encontrado.");
-        return;
-      }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.get("/api/vehicles", config);
-      setVehicles(response.data);
-    } catch (error) {
-      setFetchError("Erro ao buscar veículos. Tente novamente mais tarde.");
-      console.error("Erro ao buscar veículos:", error);
+      const { data } = await axios.get("/api/vehicles", getAuthConfig());
+      setVehicles(data);
+    } catch (err) {
+      setError(err.response?.data?.message || "Erro ao buscar veículos");
+      console.error("Fetch error:", err);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchVehicles();
-  }, []);
+  }, [fetchVehicles]);
+
+  const handleAddVehicle = async (newVehicle) => {
+    setIsUpdating(true);
+    try {
+      const config = getAuthConfig();
+      const vehicleData = {
+        ...newVehicle,
+        availabilityStatus: newVehicle.availabilityStatus || "Disponível",
+      };
+      await axios.post("/api/vehicles", vehicleData, config);
+      await fetchVehicles();
+      setIsAddModalOpen(false);
+    } catch (err) {
+      setError(err.response?.data?.message || "Erro ao adicionar veículo");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   const handleUpdateVehicle = async (updatedVehicle) => {
+    setIsUpdating(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado. Token não encontrado.");
-        return;
-      }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.patch(
+      const { data } = await axios.patch(
         `/api/vehicles/${updatedVehicle._id}`,
         updatedVehicle,
-        config
+        getAuthConfig()
       );
-
-      setVehicles((prevVehicles) =>
-        prevVehicles.map((v) =>
-          v._id === updatedVehicle._id ? response.data.vehicle : v
-        )
+      setVehicles(prev =>
+        prev.map(v => v._id === updatedVehicle._id ? data.vehicle : v)
       );
-      fetchVehicles();
-    } catch (error) {
-      console.error("Erro ao salvar alterações no veículo:", error);
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || "Erro ao atualizar veículo");
+      return false;
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleDeleteVehicle = async (vehicleId) => {
+    if (!window.confirm("Confirma a exclusão deste veículo?")) return;
+    
+    setIsUpdating(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado. Token não encontrado.");
-        return;
-      }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      await axios.delete(`/api/vehicles/${vehicleId}`, config);
-      setVehicles((prevVehicles) => prevVehicles.filter((v) => v._id !== vehicleId));
-      fetchVehicles();
-    } catch (error) {
-      console.error("Erro ao remover veículo:", error);
-    }
-  };
-
-  const handleAddVehicle = async (newVehicle) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado. Token não encontrado.");
-        return;
-      }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
-      const response = await axios.post("/api/vehicles", newVehicle, config);
-      setVehicles((prevVehicles) => [...prevVehicles, response.data]);
-      setIsAddModalOpen(false);
-      fetchVehicles();
-    } catch (error) {
-      console.error("Erro ao adicionar veículo:", error);
+      await axios.delete(`/api/vehicles/${vehicleId}`, getAuthConfig());
+      setVehicles(prev => prev.filter(v => v._id !== vehicleId));
+    } catch (err) {
+      setError(err.response?.data?.message || "Erro ao remover veículo");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleAssignVehicle = async (vehicleId, projectId) => {
+    setIsUpdating(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Usuário não autenticado. Token não encontrado.");
-        return;
-      }
-
-      const config = { headers: { Authorization: `Bearer ${token}` } };
       await axios.patch(
         `/api/vehicles/${vehicleId}/assign`,
         { projectId },
-        config
+        getAuthConfig()
       );
-      fetchVehicles();
-    } catch (error) {
-      console.error("Erro ao alocar veículo:", error);
+      await fetchVehicles();
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || "Erro ao alocar veículo");
+      return false;
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -124,13 +112,23 @@ const DashboardVehicles = () => {
       <h1>Gerenciamento de Veículos</h1>
       
       <div className={styles.addVehicleButton}>
-        <button onClick={() => setIsAddModalOpen(true)}>+ Adicionar Veículo</button>
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          disabled={isUpdating}
+        >
+          + Adicionar Veículo
+        </button>
       </div>
 
-      {fetchError && <p className={styles.error}>{fetchError}</p>}
+      {error && (
+        <div className={styles.error}>
+          {error}
+          <button onClick={() => setError(null)}>×</button>
+        </div>
+      )}
 
       {isLoading ? (
-        <p>Carregando veículos...</p>
+        <div className={styles.loading}>Carregando veículos...</div>
       ) : (
         <>
           <VehicleSummary vehicles={vehicles} />
@@ -139,7 +137,7 @@ const DashboardVehicles = () => {
             onUpdateVehicle={handleUpdateVehicle}
             onDeleteVehicle={handleDeleteVehicle}
             onAssignVehicle={handleAssignVehicle}
-            onVehicleStatusChange={fetchVehicles}
+            isUpdating={isUpdating}
           />
         </>
       )}
@@ -148,11 +146,28 @@ const DashboardVehicles = () => {
         <AddVehicleModal
           isOpen={isAddModalOpen}
           onClose={() => setIsAddModalOpen(false)}
-          onAddVehicle={handleAddVehicle}
+          onVehicleAdded={handleAddVehicle}
+          isProcessing={isUpdating}
         />
       )}
     </div>
   );
+};
+
+DashboardVehicles.propTypes = {
+  vehicles: PropTypes.arrayOf(
+    PropTypes.shape({
+      _id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      plate: PropTypes.string.isRequired,
+      availabilityStatus: PropTypes.string.isRequired,
+      nextMaintenanceDate: PropTypes.string,
+      projectAssociated: PropTypes.shape({
+        _id: PropTypes.string,
+        name: PropTypes.string,
+      }),
+    })
+  ),
 };
 
 export default DashboardVehicles;
