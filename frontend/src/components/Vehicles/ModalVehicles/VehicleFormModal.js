@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import styles from './VehicleFormModal.module.css';
+import styles from './styles.module.css';
 
 const VehicleFormModal = ({ isOpen, onClose, onVehicleAdded }) => {
   const [formData, setFormData] = useState({

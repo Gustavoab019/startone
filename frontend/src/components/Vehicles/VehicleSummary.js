@@ -1,79 +1,62 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import React from 'react';
 import styles from './styles.module.css'; // CSS do componente
 
-const VehicleSummary = () => {
-  const [vehicleCounts, setVehicleCounts] = useState({
-    available: 0,
-    inUse: 0,
-    maintenance: 0,
-    pendingMaintenance: 0,
-  });
+// Função para calcular as estatísticas dos veículos
+const calculateVehicleStats = (vehicles) => {
+  const currentDate = new Date();
 
-  useEffect(() => {
-    // Função para buscar os dados dos veículos do backend
-    const fetchVehicleCounts = async () => {
-      try {
-        // Obtendo o token do local storage
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          console.error('Usuário não autenticado. Token não encontrado.');
-          return;
+  return vehicles.reduce(
+    (stats, vehicle) => {
+      if (vehicle.availabilityStatus === 'Disponível') {
+        stats.available += 1;
+
+        // Verifica se a manutenção está pendente (7 dias ou menos para a próxima manutenção)
+        const nextMaintenanceDate = new Date(vehicle.nextMaintenanceDate);
+        const daysToMaintenance = (nextMaintenanceDate - currentDate) / (1000 * 60 * 60 * 24);
+        if (daysToMaintenance <= 7) {
+          stats.pendingMaintenance += 1;
         }
-
-        // Configurando o cabeçalho Authorization com o token JWT
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const response = await axios.get('/api/vehicles', config);
-        const vehicles = response.data;
-
-        // Calculando os contadores de cada status
-        const available = vehicles.filter(vehicle => vehicle.availabilityStatus === 'Disponível').length;
-        const inUse = vehicles.filter(vehicle => vehicle.availabilityStatus === 'Indisponível').length;
-        const maintenance = vehicles.filter(vehicle => vehicle.availabilityStatus === 'Manutenção').length;
-        const pendingMaintenance = vehicles.filter(vehicle => {
-          const nextMaintenanceDate = new Date(vehicle.nextMaintenanceDate);
-          const currentDate = new Date();
-          const daysToMaintenance = (nextMaintenanceDate - currentDate) / (1000 * 60 * 60 * 24);
-          return daysToMaintenance <= 7 && vehicle.availabilityStatus === 'Disponível';
-        }).length;
-
-        setVehicleCounts({
-          available,
-          inUse,
-          maintenance,
-          pendingMaintenance,
-        });
-      } catch (error) {
-        console.error('Erro ao buscar contagem de veículos:', error);
+      } else if (vehicle.availabilityStatus === 'Indisponível') {
+        stats.inUse += 1;
+      } else if (vehicle.availabilityStatus === 'Manutenção') {
+        stats.maintenance += 1;
       }
-    };
+      return stats;
+    },
+    {
+      available: 0,
+      inUse: 0,
+      maintenance: 0,
+      pendingMaintenance: 0,
+    }
+  );
+};
 
-    fetchVehicleCounts();
-  }, []);
+// Componente para exibir o resumo dos veículos
+const VehicleSummary = ({ vehicles }) => {
+  // Calcula as estatísticas dos veículos
+  const { available, inUse, maintenance, pendingMaintenance } = React.useMemo(
+    () => calculateVehicleStats(vehicles),
+    [vehicles]
+  );
 
   return (
     <div className={styles.vehicleSummaryContainer}>
-      <div className={styles.summaryCard}>
+      <div className={`${styles.summaryCard} ${styles.available}`}>
         <h3>Disponíveis</h3>
-        <p>{vehicleCounts.available} veículos</p>
+        <p>{available} veículos</p>
       </div>
-      <div className={styles.summaryCard}>
+      <div className={`${styles.summaryCard} ${styles.inUse}`}>
         <h3>Em Uso</h3>
-        <p>{vehicleCounts.inUse} veículos</p>
+        <p>{inUse} veículos</p>
       </div>
-      <div className={styles.summaryCard}>
+      <div className={`${styles.summaryCard} ${styles.maintenance}`}>
         <h3>Em Manutenção</h3>
-        <p>{vehicleCounts.maintenance} veículos</p>
+        <p>{maintenance} veículos</p>
       </div>
-      <div className={styles.summaryCard}>
+      <div className={`${styles.summaryCard} ${styles.pending}`}>
         <h3>Manutenção Pendente</h3>
-        <p>{vehicleCounts.pendingMaintenance} veículos</p>
+        <p>{pendingMaintenance} veículos</p>
       </div>
     </div>
   );
