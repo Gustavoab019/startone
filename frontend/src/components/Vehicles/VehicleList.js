@@ -1,50 +1,52 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import styles from './styles.module.css';
+// VehicleList.js
+import React, { useState } from "react";
+import EditVehicleModal from "./ModalVehicles/EditVehicleModal";
+import AssignProjectModal from "./ModalVehicles/AssignProjectModal";
+import styles from "./styles.module.css";
 
-const VehicleList = ({ onEditVehicle, onDeleteVehicle, onAssignVehicle }) => {
-  const [vehicles, setVehicles] = useState([]);
-  const [filter, setFilter] = useState('Todos');
+const VehicleList = ({ 
+  vehicles, 
+  onUpdateVehicle, 
+  onDeleteVehicle, 
+  onAssignVehicle, 
+  onVehicleStatusChange 
+}) => {
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      try {
-        const token = localStorage.getItem('token');
+  const handleEditVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsEditModalOpen(true);
+  };
 
-        if (!token) {
-          console.error('Usuário não autenticado. Token não encontrado.');
-          return;
-        }
+  const handleSaveVehicle = async (updatedVehicle) => {
+    try {
+      await onUpdateVehicle(updatedVehicle);
+      setIsEditModalOpen(false);
+      onVehicleStatusChange();
+    } catch (error) {
+      console.error("Erro ao atualizar veículo:", error);
+    }
+  };
 
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
+  const handleAssignVehicle = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setIsAssignModalOpen(true);
+  };
 
-        const response = await axios.get('/api/vehicles', config);
-        setVehicles(response.data);
-      } catch (error) {
-        console.error('Erro ao buscar veículos:', error);
-      }
-    };
-
-    fetchVehicles();
-  }, []);
-
-  const filteredVehicles = vehicles.filter(vehicle => {
-    if (filter === 'Todos') return true;
-    return vehicle.availabilityStatus === filter;
-  });
+  const handleAssignToProject = async (vehicleId, projectId) => {
+    try {
+      await onAssignVehicle(vehicleId, projectId);
+      setIsAssignModalOpen(false);
+      onVehicleStatusChange();
+    } catch (error) {
+      console.error("Erro ao alocar veículo:", error);
+    }
+  };
 
   return (
     <div className={styles.vehicleListContainer}>
-      <div className={styles.filters}>
-        <button onClick={() => setFilter('Todos')}>Todos os Veículos</button>
-        <button onClick={() => setFilter('Disponível')}>Disponíveis</button>
-        <button onClick={() => setFilter('Indisponível')}>Em Uso</button>
-        <button onClick={() => setFilter('Manutenção')}>Em Manutenção</button>
-      </div>
       <table className={styles.vehicleTable}>
         <thead>
           <tr>
@@ -52,27 +54,44 @@ const VehicleList = ({ onEditVehicle, onDeleteVehicle, onAssignVehicle }) => {
             <th>Placa</th>
             <th>Status</th>
             <th>Projeto</th>
-            <th>Próx. Manutenção</th>
             <th>Ações</th>
           </tr>
         </thead>
         <tbody>
-          {filteredVehicles.map(vehicle => (
+          {vehicles.map((vehicle) => (
             <tr key={vehicle._id}>
-              <td>{vehicle.name} ({vehicle.type})</td>
+              <td>{vehicle.name}</td>
               <td>{vehicle.plate}</td>
               <td>{vehicle.availabilityStatus}</td>
-              <td>{vehicle.projectAssociated ? vehicle.projectAssociated.name : '-'}</td>
-              <td>{new Date(vehicle.nextMaintenanceDate).toLocaleDateString()}</td>
+              <td>{vehicle.projectAssociated?.name || "N/A"}</td>
               <td>
-                <button onClick={() => onEditVehicle(vehicle)}>Editar</button>
-                <button onClick={() => onAssignVehicle(vehicle)}>Atribuir a Projeto</button>
-                <button onClick={() => onDeleteVehicle(vehicle._id)}>Remover</button>
+                <button onClick={() => handleEditVehicle(vehicle)}>Editar</button>
+                <button onClick={() => handleAssignVehicle(vehicle)}>
+                  Atribuir a Projeto
+                </button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {isEditModalOpen && (
+        <EditVehicleModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          vehicle={selectedVehicle}
+          onSave={handleSaveVehicle}
+        />
+      )}
+
+      {isAssignModalOpen && (
+        <AssignProjectModal
+          isOpen={isAssignModalOpen}
+          onClose={() => setIsAssignModalOpen(false)}
+          vehicleId={selectedVehicle._id}
+          onAssign={handleAssignToProject}
+        />
+      )}
     </div>
   );
 };

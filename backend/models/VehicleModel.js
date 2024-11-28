@@ -34,8 +34,11 @@ const VehicleSchema = new mongoose.Schema({
     required: true,
   },
   projectAssociated: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Project',
+    type: {
+      _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Project' }, // ID do projeto associado
+      name: { type: String }, // Nome do projeto associado
+    },
+    default: null, // Valor padrão caso nenhum projeto esteja associado
   },
   additionalNotes: {
     type: String,

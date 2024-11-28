@@ -3,6 +3,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const router = express.Router();
 const Vehicle = require('../models/VehicleModel');
+const Project = require('../models/projectModel'); // Modelo de Projetos
 const { protect } = require('../middlewares/authMiddleware'); // Importando corretamente o middleware como função
 
 // Função auxiliar para verificar a proximidade da manutenção
@@ -155,38 +156,52 @@ router.patch('/:id/maintenance', protect, async (req, res) => {
 });
 
   
-// Rota para alocar um veículo a um projeto (PATCH /api/vehicles/:id/assign)
+// Rota para associar um veículo a um projeto
 router.patch('/:id/assign', protect, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { projectId } = req.body;
-  
-      // Validação básica para o ID do projeto
-      if (!projectId) {
-        return res.status(400).json({ error: 'Por favor, forneça o ID do projeto ao qual o veículo deve ser associado.' });
-      }
-  
-      // Encontrar o veículo e verificar se o usuário autenticado é o proprietário
-      const vehicle = await Vehicle.findById(id);
-      if (!vehicle) {
-        return res.status(404).json({ error: 'Veículo não encontrado.' });
-      }
-  
-      if (vehicle.owner.toString() !== req.user._id.toString()) {
-        return res.status(401).json({ error: 'Você não tem permissão para alocar este veículo.' });
-      }
-  
-      // Atualizar o veículo para associá-lo ao projeto e definir o status como "Em Uso"
-      vehicle.projectAssociated = projectId;
-      vehicle.availabilityStatus = "Indisponível";
-      await vehicle.save();
-  
-      res.status(200).json({ message: 'Veículo alocado ao projeto com sucesso!', vehicle });
-    } catch (error) {
-      console.error('Erro ao alocar veículo ao projeto:', error);
-      res.status(500).json({ error: 'Erro ao alocar o veículo ao projeto. Tente novamente mais tarde.' });
+  try {
+    const { id } = req.params; // ID do veículo
+    const { projectId } = req.body; // ID do projeto
+
+    // Validação do ID do projeto
+    if (!projectId) {
+      return res.status(400).json({ error: 'Por favor, forneça o ID do projeto ao qual o veículo deve ser associado.' });
     }
-  });
+
+    // Encontrar o veículo pelo ID
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Veículo não encontrado.' });
+    }
+
+    // Verificar se o usuário autenticado é o proprietário do veículo
+    if (vehicle.owner.toString() !== req.user._id.toString()) {
+      return res.status(401).json({ error: 'Você não tem permissão para alocar este veículo.' });
+    }
+
+    // Buscar o projeto pelo ID
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
+    }
+
+    // Atualizar o veículo com o ID e nome do projeto
+    vehicle.projectAssociated = {
+      _id: projectId,
+      name: project.projectTitle,
+    };
+    vehicle.availabilityStatus = 'Indisponível';
+
+    // Salvar o veículo atualizado no banco de dados
+    await vehicle.save();
+
+    res.status(200).json({ message: 'Veículo alocado ao projeto com sucesso!', vehicle });
+  } catch (error) {
+    console.error('Erro ao alocar veículo ao projeto:', error);
+    res.status(500).json({ error: 'Erro ao alocar o veículo ao projeto. Tente novamente mais tarde.' });
+  }
+});
+
+
 
   // Rota para desalocar um veículo de um projeto (PATCH /api/vehicles/:id/unassign)
 router.patch('/:id/unassign', protect, async (req, res) => {

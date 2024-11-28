@@ -1,82 +1,154 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import VehicleSummary from '../Vehicles/VehicleSummary';
-import VehicleFormModal from '../Vehicles/ModalVehicles/VehicleFormModal';
-import VehicleList from '../Vehicles/VehicleList';
-import styles from './styles.module.css';
+// DashboardVehicles.js
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import VehicleSummary from "./VehicleSummary";
+import VehicleList from "./VehicleList";
+import AddVehicleModal from "./ModalVehicles/VehicleFormModal";
+import styles from "./styles.module.css";
 
 const DashboardVehicles = () => {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [vehicleToEdit, setVehicleToEdit] = useState(null); // Estado para gerenciar qual veículo editar
+  const [vehicles, setVehicles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Função para abrir o modal de adicionar veículo
-  const handleAddVehicle = () => {
-    setVehicleToEdit(null); // Reseta o veículo a ser editado
-    setShowAddModal(true); // Abre o modal
-  };
-
-  // Função para abrir o modal de edição
-  const handleEditVehicle = (vehicle) => {
-    setVehicleToEdit(vehicle); // Define o veículo a ser editado
-    setShowAddModal(true); // Abre o modal
-  };
-
-  // Função para remover um veículo
-  const handleDeleteVehicle = async (vehicleId) => {
-    const confirm = window.confirm('Tem certeza que deseja remover este veículo?');
-    if (!confirm) return;
+  const fetchVehicles = async () => {
+    setIsLoading(true);
+    setFetchError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (!token) {
-        console.error('Usuário não autenticado. Token não encontrado.');
+        console.error("Usuário não autenticado. Token não encontrado.");
         return;
       }
 
-      // Configurando o cabeçalho Authorization com o token JWT
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
-      // Faz a requisição para remover o veículo
-      await axios.delete(`/api/vehicles/${vehicleId}`, config);
-      window.location.reload(); // Atualiza a página após remover o veículo
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.get("/api/vehicles", config);
+      setVehicles(response.data);
     } catch (error) {
-      console.error('Erro ao remover veículo:', error);
+      setFetchError("Erro ao buscar veículos. Tente novamente mais tarde.");
+      console.error("Erro ao buscar veículos:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Função para alocar o veículo a um projeto
-  const handleAssignVehicle = (vehicle) => {
-    console.log('Alocar veículo a projeto:', vehicle);
-    // Aqui podemos abrir um modal para selecionar o projeto ou implementar outra lógica
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const handleUpdateVehicle = async (updatedVehicle) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuário não autenticado. Token não encontrado.");
+        return;
+      }
+
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.patch(
+        `/api/vehicles/${updatedVehicle._id}`,
+        updatedVehicle,
+        config
+      );
+
+      setVehicles((prevVehicles) =>
+        prevVehicles.map((v) =>
+          v._id === updatedVehicle._id ? response.data.vehicle : v
+        )
+      );
+      fetchVehicles();
+    } catch (error) {
+      console.error("Erro ao salvar alterações no veículo:", error);
+    }
+  };
+
+  const handleDeleteVehicle = async (vehicleId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuário não autenticado. Token não encontrado.");
+        return;
+      }
+
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.delete(`/api/vehicles/${vehicleId}`, config);
+      setVehicles((prevVehicles) => prevVehicles.filter((v) => v._id !== vehicleId));
+      fetchVehicles();
+    } catch (error) {
+      console.error("Erro ao remover veículo:", error);
+    }
+  };
+
+  const handleAddVehicle = async (newVehicle) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuário não autenticado. Token não encontrado.");
+        return;
+      }
+
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await axios.post("/api/vehicles", newVehicle, config);
+      setVehicles((prevVehicles) => [...prevVehicles, response.data]);
+      setIsAddModalOpen(false);
+      fetchVehicles();
+    } catch (error) {
+      console.error("Erro ao adicionar veículo:", error);
+    }
+  };
+
+  const handleAssignVehicle = async (vehicleId, projectId) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Usuário não autenticado. Token não encontrado.");
+        return;
+      }
+
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await axios.patch(
+        `/api/vehicles/${vehicleId}/assign`,
+        { projectId },
+        config
+      );
+      fetchVehicles();
+    } catch (error) {
+      console.error("Erro ao alocar veículo:", error);
+    }
   };
 
   return (
     <div className={styles.dashboardContainer}>
       <h1>Gerenciamento de Veículos</h1>
-      <p>Gerencie sua frota e alocações em projetos</p>
-
-      <VehicleSummary />
-
+      
       <div className={styles.addVehicleButton}>
-        <button onClick={handleAddVehicle}>+ Adicionar Veículo</button>
+        <button onClick={() => setIsAddModalOpen(true)}>+ Adicionar Veículo</button>
       </div>
 
-      <VehicleList
-        onEditVehicle={handleEditVehicle}
-        onDeleteVehicle={handleDeleteVehicle}
-        onAssignVehicle={handleAssignVehicle}
-      />
+      {fetchError && <p className={styles.error}>{fetchError}</p>}
 
-      {showAddModal && (
-        <VehicleFormModal
-          isOpen={showAddModal}
-          onClose={() => setShowAddModal(false)}
-          onVehicleAdded={() => window.location.reload()} // Atualiza a página após adicionar veículo
-          vehicle={vehicleToEdit} // Passa o veículo a ser editado para o modal
+      {isLoading ? (
+        <p>Carregando veículos...</p>
+      ) : (
+        <>
+          <VehicleSummary vehicles={vehicles} />
+          <VehicleList
+            vehicles={vehicles}
+            onUpdateVehicle={handleUpdateVehicle}
+            onDeleteVehicle={handleDeleteVehicle}
+            onAssignVehicle={handleAssignVehicle}
+            onVehicleStatusChange={fetchVehicles}
+          />
+        </>
+      )}
+
+      {isAddModalOpen && (
+        <AddVehicleModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAddVehicle={handleAddVehicle}
         />
       )}
     </div>
@@ -84,4 +156,3 @@ const DashboardVehicles = () => {
 };
 
 export default DashboardVehicles;
-
