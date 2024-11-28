@@ -1,50 +1,42 @@
 import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
 import axios from "axios";
 import styles from "./styles.module.css";
 
-const AssignProjectModal = ({ isOpen, onClose, vehicleId, onAssign }) => {
-  const [projects, setProjects] = useState([]); // Lista de projetos disponíveis
-  const [selectedProject, setSelectedProject] = useState(""); // Projeto selecionado
+const AssignProjectModal = ({ isOpen, onClose, vehicleId, onAssign, isProcessing }) => {
+  const [projects, setProjects] = useState([]);
+  const [selectedProject, setSelectedProject] = useState("");
+  const [error, setError] = useState(null);
 
-  // Carregar a lista de projetos ao abrir o modal
   useEffect(() => {
     const fetchProjects = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) throw new Error("Authentication required");
 
-        if (!token) {
-          console.error("Usuário não autenticado. Token não encontrado.");
-          return;
-        }
-
-        const config = {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        };
-
-        const response = await axios.get("/api/projects/my-projects", config);
-        console.log("Projetos retornados:", response.data); // Debug para verificar a API
-        setProjects(response.data); // Atualiza a lista de projetos
-      } catch (error) {
-        console.error("Erro ao buscar projetos:", error);
+        const { data } = await axios.get("/api/projects/my-projects", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProjects(data);
+        setError(null);
+      } catch (err) {
+        setError("Erro ao carregar projetos");
+        console.error("Error fetching projects:", err);
       }
     };
 
     if (isOpen) {
-      fetchProjects(); // Carrega os projetos quando o modal é aberto
+      fetchProjects();
+      setSelectedProject("");
     }
   }, [isOpen]);
 
   const handleAssign = async () => {
     if (!selectedProject) {
-      alert("Por favor, selecione um projeto.");
+      setError("Selecione um projeto");
       return;
     }
-
-    // Chama a função de atribuição passada pelo pai
-    onAssign(vehicleId, selectedProject);
-    onClose(); // Fecha o modal
+    await onAssign(vehicleId, selectedProject);
   };
 
   if (!isOpen) return null;
@@ -53,27 +45,35 @@ const AssignProjectModal = ({ isOpen, onClose, vehicleId, onAssign }) => {
     <div className={styles.modal}>
       <div className={styles.modalContent}>
         <h2>Alocar Veículo a Projeto</h2>
-        <p>Selecione um projeto ao qual deseja associar o veículo:</p>
-        <ul className={styles.projectList}>
+        {error && <div className={styles.error}>{error}</div>}
+        <div className={styles.projectList}>
           {projects.map((project) => (
-            <li
+            <div
               key={project._id}
-              className={`${styles.projectItem} ${
-                selectedProject === project._id ? styles.selected : ""
-              }`}
-              onClick={() => setSelectedProject(project._id)}
+              className={`${styles.projectItem} ${selectedProject === project._id ? styles.selected : ""}`}
+              onClick={() => !isProcessing && setSelectedProject(project._id)}
             >
-              {project.projectTitle || "Projeto sem nome"}
-            </li>
+              {project.projectTitle}
+            </div>
           ))}
-        </ul>
+        </div>
         <div className={styles.modalActions}>
-          <button onClick={handleAssign}>Atribuir</button>
-          <button onClick={onClose}>Cancelar</button>
+          <button onClick={handleAssign} disabled={isProcessing || !selectedProject}>
+            {isProcessing ? "Atribuindo..." : "Atribuir"}
+          </button>
+          <button onClick={onClose} disabled={isProcessing}>Cancelar</button>
         </div>
       </div>
     </div>
   );
+};
+
+AssignProjectModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  vehicleId: PropTypes.string.isRequired,
+  onAssign: PropTypes.func.isRequired,
+  isProcessing: PropTypes.bool
 };
 
 export default AssignProjectModal;

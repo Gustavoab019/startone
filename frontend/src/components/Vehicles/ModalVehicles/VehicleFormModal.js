@@ -1,47 +1,54 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import PropTypes from 'prop-types';
 import styles from './styles.module.css';
 
-const VehicleFormModal = ({ isOpen, onClose, onVehicleAdded }) => {
+const VEHICLE_TYPES = {
+  TRUCK: "Caminhão",
+  VAN: "Van",
+  CAR: "Carro"
+};
+
+const VEHICLE_STATUS = {
+  AVAILABLE: "Disponível",
+  UNAVAILABLE: "Indisponível",
+  MAINTENANCE: "Manutenção"
+};
+
+const VehicleFormModal = ({ isOpen, onClose, onVehicleAdded, isProcessing }) => {
   const [formData, setFormData] = useState({
     name: '',
-    type: 'Caminhão',
+    type: VEHICLE_TYPES.TRUCK,
     capacity: '',
     plate: '',
     nextMaintenanceDate: '',
-    availabilityStatus: 'Disponível',
-    additionalNotes: '',
+    availabilityStatus: VEHICLE_STATUS.AVAILABLE,
+    additionalNotes: ''
   });
+  const [error, setError] = useState(null);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+  const validateForm = () => {
+    if (!formData.plate.match(/^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/)) {
+      setError('Formato de placa inválido');
+      return false;
+    }
+    if (formData.capacity <= 0) {
+      setError('Capacidade deve ser maior que zero');
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
+
+    if (!validateForm()) return;
+
     try {
-      // Obtendo o token do localStorage
-      const token = localStorage.getItem('token');
-
-      if (!token) {
-        console.error('Usuário não autenticado. Token não encontrado.');
-        return;
-      }
-
-      // Configurando o cabeçalho Authorization com o token JWT
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
-
-      // Enviando os dados para o backend
-      await axios.post('/api/vehicles', formData, config);
-      onVehicleAdded(); // Callback para atualizar a lista de veículos após adicionar
-      onClose(); // Fecha o modal após a adição bem-sucedida
-    } catch (error) {
-      console.error('Erro ao adicionar veículo:', error);
+      await onVehicleAdded(formData);
+      onClose();
+    } catch (err) {
+      setError(err.message || 'Erro ao adicionar veículo');
     }
   };
 
@@ -51,82 +58,96 @@ const VehicleFormModal = ({ isOpen, onClose, onVehicleAdded }) => {
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
         <h2>Adicionar Veículo</h2>
+        {error && <div className={styles.error}>{error}</div>}
+        
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label>Nome</label>
             <input
               type="text"
-              name="name"
               value={formData.name}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              disabled={isProcessing}
               required
             />
           </div>
+
           <div className={styles.formGroup}>
             <label>Tipo</label>
             <select
-              name="type"
               value={formData.type}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+              disabled={isProcessing}
             >
-              <option value="Caminhão">Caminhão</option>
-              <option value="Van">Van</option>
-              <option value="Carro">Carro</option>
+              {Object.values(VEHICLE_TYPES).map(type => (
+                <option key={type} value={type}>{type}</option>
+              ))}
             </select>
           </div>
+
           <div className={styles.formGroup}>
             <label>Capacidade (kg)</label>
             <input
               type="number"
-              name="capacity"
               value={formData.capacity}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
+              min="1"
+              disabled={isProcessing}
               required
             />
           </div>
+
           <div className={styles.formGroup}>
             <label>Placa</label>
             <input
               type="text"
-              name="plate"
               value={formData.plate}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, plate: e.target.value.toUpperCase() })}
+              placeholder="ABC1D23"
+              disabled={isProcessing}
               required
             />
           </div>
+
           <div className={styles.formGroup}>
-            <label>Data da Próxima Manutenção</label>
+            <label>Próxima Manutenção</label>
             <input
               type="date"
-              name="nextMaintenanceDate"
               value={formData.nextMaintenanceDate}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, nextMaintenanceDate: e.target.value })}
+              min={new Date().toISOString().split('T')[0]}
+              disabled={isProcessing}
               required
             />
           </div>
+
           <div className={styles.formGroup}>
             <label>Status</label>
             <select
-              name="availabilityStatus"
               value={formData.availabilityStatus}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, availabilityStatus: e.target.value })}
+              disabled={isProcessing}
             >
-              <option value="Disponível">Disponível</option>
-              <option value="Indisponível">Indisponível</option>
-              <option value="Manutenção">Manutenção</option>
+              {Object.values(VEHICLE_STATUS).map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
           </div>
+
           <div className={styles.formGroup}>
             <label>Notas Adicionais</label>
             <textarea
-              name="additionalNotes"
               value={formData.additionalNotes}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, additionalNotes: e.target.value })}
+              disabled={isProcessing}
             />
           </div>
+
           <div className={styles.buttonGroup}>
-            <button type="submit">Adicionar Veículo</button>
-            <button type="button" onClick={onClose}>
+            <button type="submit" disabled={isProcessing}>
+              {isProcessing ? "Adicionando..." : "Adicionar Veículo"}
+            </button>
+            <button type="button" onClick={onClose} disabled={isProcessing}>
               Cancelar
             </button>
           </div>
@@ -134,6 +155,13 @@ const VehicleFormModal = ({ isOpen, onClose, onVehicleAdded }) => {
       </div>
     </div>
   );
+};
+
+VehicleFormModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onVehicleAdded: PropTypes.func.isRequired,
+  isProcessing: PropTypes.bool
 };
 
 export default VehicleFormModal;

@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from "react";
+import PropTypes from "prop-types";
 import styles from "./styles.module.css";
 
-const EditVehicleModal = ({ isOpen, onClose, vehicle, onSave }) => {
+const VEHICLE_STATUS = {
+  AVAILABLE: "Disponível",
+  UNAVAILABLE: "Indisponível",
+  MAINTENANCE: "Manutenção"
+};
+
+const EditVehicleModal = ({ isOpen, onClose, vehicle, onSave, isProcessing }) => {
   const [formData, setFormData] = useState({
     name: "",
     plate: "",
     availabilityStatus: "",
-    nextMaintenanceDate: "",
+    nextMaintenanceDate: ""
   });
+  const [error, setError] = useState(null);
 
-  // Preenche os dados do veículo ao abrir a modal
   useEffect(() => {
     if (vehicle) {
       setFormData({
@@ -18,20 +25,24 @@ const EditVehicleModal = ({ isOpen, onClose, vehicle, onSave }) => {
         availabilityStatus: vehicle.availabilityStatus || "",
         nextMaintenanceDate: vehicle.nextMaintenanceDate
           ? new Date(vehicle.nextMaintenanceDate).toISOString().split("T")[0]
-          : "",
+          : ""
       });
     }
   }, [vehicle]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSave({ ...vehicle, ...formData });
-    onClose();
+    setError(null);
+
+    if (!formData.nextMaintenanceDate) {
+      setError("Data de manutenção é obrigatória");
+      return;
+    }
+
+    const success = await onSave({ ...vehicle, ...formData });
+    if (success) {
+      onClose();
+    }
   };
 
   if (!isOpen) return null;
@@ -40,56 +51,60 @@ const EditVehicleModal = ({ isOpen, onClose, vehicle, onSave }) => {
     <div className={styles.modal}>
       <div className={styles.modalContent}>
         <h2>Editar Veículo</h2>
+        {error && <div className={styles.error}>{error}</div>}
+        
         <form onSubmit={handleSubmit}>
-          {/* Nome e Placa como somente leitura */}
-          <label>
-            Nome do Veículo:
+          <div className={styles.formGroup}>
+            <label>Nome do Veículo:</label>
             <input
               type="text"
-              name="name"
               value={formData.name}
               readOnly
               className={styles.readOnlyField}
             />
-          </label>
-          <label>
-            Placa:
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Placa:</label>
             <input
               type="text"
-              name="plate"
               value={formData.plate}
               readOnly
               className={styles.readOnlyField}
             />
-          </label>
+          </div>
 
-          {/* Status e Data de Manutenção como editáveis */}
-          <label>
-            Status:
+          <div className={styles.formGroup}>
+            <label>Status:</label>
             <select
-              name="availabilityStatus"
               value={formData.availabilityStatus}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, availabilityStatus: e.target.value })}
+              disabled={isProcessing}
               required
             >
-              <option value="">Selecione...</option>
-              <option value="Disponível">Disponível</option>
-              <option value="Indisponível">Em Uso</option>
-              <option value="Manutenção">Em Manutenção</option>
+              {Object.values(VEHICLE_STATUS).map(status => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
-          </label>
-          <label>
-            Próxima Manutenção:
+          </div>
+
+          <div className={styles.formGroup}>
+            <label>Próxima Manutenção:</label>
             <input
               type="date"
-              name="nextMaintenanceDate"
               value={formData.nextMaintenanceDate}
-              onChange={handleInputChange}
+              onChange={(e) => setFormData({ ...formData, nextMaintenanceDate: e.target.value })}
+              disabled={isProcessing}
+              min={new Date().toISOString().split('T')[0]}
+              required
             />
-          </label>
+          </div>
+
           <div className={styles.modalActions}>
-            <button type="submit">Salvar</button>
-            <button type="button" onClick={onClose}>
+            <button type="submit" disabled={isProcessing}>
+              {isProcessing ? "Salvando..." : "Salvar"}
+            </button>
+            <button type="button" onClick={onClose} disabled={isProcessing}>
               Cancelar
             </button>
           </div>
@@ -97,6 +112,20 @@ const EditVehicleModal = ({ isOpen, onClose, vehicle, onSave }) => {
       </div>
     </div>
   );
+};
+
+EditVehicleModal.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  vehicle: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    plate: PropTypes.string.isRequired,
+    availabilityStatus: PropTypes.string.isRequired,
+    nextMaintenanceDate: PropTypes.string
+  }),
+  onSave: PropTypes.func.isRequired,
+  isProcessing: PropTypes.bool
 };
 
 export default EditVehicleModal;

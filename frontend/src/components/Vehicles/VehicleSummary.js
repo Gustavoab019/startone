@@ -1,25 +1,33 @@
 import React from 'react';
-import styles from './styles.module.css'; // CSS do componente
+import PropTypes from 'prop-types';
+import styles from './styles.module.css';
 
-// Função para calcular as estatísticas dos veículos
 const calculateVehicleStats = (vehicles) => {
   const currentDate = new Date();
-
+  
   return vehicles.reduce(
     (stats, vehicle) => {
-      if (vehicle.availabilityStatus === 'Disponível') {
-        stats.available += 1;
-
-        // Verifica se a manutenção está pendente (7 dias ou menos para a próxima manutenção)
-        const nextMaintenanceDate = new Date(vehicle.nextMaintenanceDate);
-        const daysToMaintenance = (nextMaintenanceDate - currentDate) / (1000 * 60 * 60 * 24);
-        if (daysToMaintenance <= 7) {
-          stats.pendingMaintenance += 1;
-        }
-      } else if (vehicle.availabilityStatus === 'Indisponível') {
-        stats.inUse += 1;
-      } else if (vehicle.availabilityStatus === 'Manutenção') {
-        stats.maintenance += 1;
+      const status = vehicle.availabilityStatus?.toLowerCase();
+      
+      switch (status) {
+        case 'disponível':
+          stats.available += 1;
+          const nextMaintenanceDate = new Date(vehicle.nextMaintenanceDate);
+          const daysToMaintenance = Math.ceil(
+            (nextMaintenanceDate - currentDate) / (1000 * 60 * 60 * 24)
+          );
+          if (daysToMaintenance <= 7 && daysToMaintenance >= 0) {
+            stats.pendingMaintenance += 1;
+          }
+          break;
+        case 'indisponível':
+          stats.inUse += 1;
+          break;
+        case 'manutenção':
+          stats.maintenance += 1;
+          break;
+        default:
+          console.warn(`Unknown vehicle status: ${status}`);
       }
       return stats;
     },
@@ -32,34 +40,48 @@ const calculateVehicleStats = (vehicles) => {
   );
 };
 
-// Componente para exibir o resumo dos veículos
+const SummaryCard = ({ title, count, type }) => (
+  <div className={`${styles.summaryCard} ${styles[type]}`}>
+    <h3>{title}</h3>
+    <p>{count} veículos</p>
+  </div>
+);
+
+SummaryCard.propTypes = {
+  title: PropTypes.string.isRequired,
+  count: PropTypes.number.isRequired,
+  type: PropTypes.oneOf(['available', 'inUse', 'maintenance', 'pending']).isRequired,
+};
+
 const VehicleSummary = ({ vehicles }) => {
-  // Calcula as estatísticas dos veículos
-  const { available, inUse, maintenance, pendingMaintenance } = React.useMemo(
+  const stats = React.useMemo(
     () => calculateVehicleStats(vehicles),
     [vehicles]
   );
 
+  const summaryData = [
+    { title: 'Disponíveis', count: stats.available, type: 'available' },
+    { title: 'Em Uso', count: stats.inUse, type: 'inUse' },
+    { title: 'Em Manutenção', count: stats.maintenance, type: 'maintenance' },
+    { title: 'Manutenção Pendente', count: stats.pendingMaintenance, type: 'pending' },
+  ];
+
   return (
     <div className={styles.vehicleSummaryContainer}>
-      <div className={`${styles.summaryCard} ${styles.available}`}>
-        <h3>Disponíveis</h3>
-        <p>{available} veículos</p>
-      </div>
-      <div className={`${styles.summaryCard} ${styles.inUse}`}>
-        <h3>Em Uso</h3>
-        <p>{inUse} veículos</p>
-      </div>
-      <div className={`${styles.summaryCard} ${styles.maintenance}`}>
-        <h3>Em Manutenção</h3>
-        <p>{maintenance} veículos</p>
-      </div>
-      <div className={`${styles.summaryCard} ${styles.pending}`}>
-        <h3>Manutenção Pendente</h3>
-        <p>{pendingMaintenance} veículos</p>
-      </div>
+      {summaryData.map((data) => (
+        <SummaryCard key={data.type} {...data} />
+      ))}
     </div>
   );
+};
+
+VehicleSummary.propTypes = {
+  vehicles: PropTypes.arrayOf(
+    PropTypes.shape({
+      availabilityStatus: PropTypes.string.isRequired,
+      nextMaintenanceDate: PropTypes.string,
+    })
+  ).isRequired,
 };
 
 export default VehicleSummary;
