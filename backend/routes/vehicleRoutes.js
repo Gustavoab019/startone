@@ -348,5 +348,33 @@ router.patch('/:id', protect, async (req, res) => {
   }
 });
 
+// Rota para excluir um veículo (DELETE /api/vehicles/:id)
+router.delete('/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params; // ID do veículo a ser excluído
+    const userId = req.user._id; // ID do usuário autenticado
+
+    // Verificar se o veículo existe no banco de dados
+    const vehicle = await Vehicle.findById(id);
+    if (!vehicle) {
+      return res.status(404).json({ error: 'Veículo não encontrado.' });
+    }
+
+    // Verificar se o usuário autenticado é o proprietário do veículo
+    if (vehicle.owner.toString() !== userId.toString()) {
+      return res.status(403).json({ error: 'Você não tem permissão para excluir este veículo.' });
+    }
+
+    // Excluir o veículo do banco de dados
+    await Vehicle.findByIdAndDelete(id);
+
+    res.status(200).json({ message: 'Veículo excluído com sucesso!' });
+  } catch (error) {
+    console.error('Erro ao excluir veículo:', error);
+    res.status(500).json({ error: 'Erro ao excluir veículo. Tente novamente mais tarde.' });
+  }
+});
+
+
 module.exports = router;
 
