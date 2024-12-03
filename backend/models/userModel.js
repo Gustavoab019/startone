@@ -1,73 +1,67 @@
 const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
   },
   username: {
     type: String,
-    unique: true, // O nome de usuário deve ser único
-    required: true
+    unique: true,
+    required: true, // Unique username for each user
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
   type: {
     type: String,
-    enum: ['professional', 'company', 'client'], // Define o tipo de usuário
-    required: true
+    enum: ['professional', 'company', 'client'], // User type
+    required: true,
   },
-  professionalProfile: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'ProfessionalProfile',  // Referência ao modelo de perfil de profissional
-  },
+  bio: { type: String, required: false }, // Biografia do profissional
   location: {
-    type: String, // Localização obrigatória para todos os tipos de usuário
-    required: true
+    type: String, // User's location
+    required: true,
   },
   companyProfile: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'CompanyProfile',  // Referência ao modelo de perfil da empresa
+    ref: 'CompanyProfile', // Links to the CompanyProfile model
+  },
+  professionalProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProfessionalProfile', // Links to the ProfessionalProfile model
   },
   clientProfile: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'ClientProfile',  // Referência ao modelo de perfil do cliente
+    ref: 'ClientProfile', // Links to the ClientProfile model
   },
   averageRating: {
     type: Number,
-    default: 0, // Começa como 0 até o usuário (profissional ou empresa) receber avaliações
+    default: 0, // Starts at 0 until reviews are added
   },
   isAdmin: {
     type: Boolean,
-    default: false
+    default: false,
   },
-  followers: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
-  }], // Lista de seguidores
-  following: [{ 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User' 
-  }] // Lista de usuários que este usuário está seguindo
-}, {
-  timestamps: true
-}); // <- Fechamento correto do esquema aqui
-
-// Middleware para gerar o username antes de salvar o usuário
-userSchema.pre('save', function (next) {
-  if (!this.username) {
-    // Gera o nome de usuário apenas se ele ainda não tiver sido definido
-    this.username = generateRandomUsername(this.name);
-  }
-  next();
-});
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ], // List of followers
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ], // List of users this user is following
+}, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 

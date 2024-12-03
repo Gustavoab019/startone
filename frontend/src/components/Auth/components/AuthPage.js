@@ -39,7 +39,7 @@ const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit} className={styles.form}>
       <h2 className={styles.title}>Entrar</h2>
-      <p className={styles.subtitle}>Bem-vindo de volta! Faça login para continuar.</p>
+      <p className={styles.subtitle}>Bem-vindo de volta! Faça login para continuar. @example.com</p>
       <input
         type="email"
         placeholder="seu@email.com"

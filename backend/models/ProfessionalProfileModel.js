@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const professionalProfileSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    bio: { type: String, required: false }, // Biografia do profissional
     specialties: { type: [String], required: true }, // Especialidades do profissional
     certifications: [
         {
@@ -23,7 +22,12 @@ const professionalProfileSchema = new mongoose.Schema({
     experienceYears: { type: Number, required: false }, // Anos de experiência
     workHours: { type: String, required: false }, // Horário de trabalho
     availability: { type: Boolean, default: true }, // Disponibilidade do profissional
-    rating: { type: Number, min: 1, max: 10, default: 5 } // Avaliação média
+    companyId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'CompanyProfile',
+        default: null, // Pode ser nulo se o profissional não estiver vinculado a nenhuma empresa
+      }
+      
 }, { timestamps: true });
 
 const ProfessionalProfileModel = mongoose.model('ProfessionalProfile', professionalProfileSchema);

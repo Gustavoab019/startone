@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import ProfileHeader from './Header/ProfileHeader';
+import ProfessionalHeader from './Header/ProfessionalHeader';
+import CompanyHeader from './Header/CompanyHeader';
 import AboutSection from './Details/AboutSection';
 import EditProfileModal from './Modals/EditProfileModal';
 import FollowersModal from './Modals/FollowersModal';
@@ -19,7 +20,7 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
   const [followers, setFollowers] = useState([]);
   const [originalProfile, setOriginalProfile] = useState({});
   const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
-  const [activeTab ] = useState('info');
+  const [activeTab] = useState('info');
   const [projectsCount, setProjectsCount] = useState(0);
 
   const fetchProjects = useCallback(async () => {
@@ -33,17 +34,17 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
       });
 
       if (!response.ok) throw new Error('Failed to fetch projects');
-      
+
       const data = await response.json();
-      
-      const sortedProjects = data.sort((a, b) => 
+
+      const sortedProjects = data.sort((a, b) =>
         new Date(b.createdAt || b.completionDate) - new Date(a.createdAt || a.completionDate)
       );
-      
+
       const latestProjects = sortedProjects.slice(0, 3);
       setRecentProjects(latestProjects);
       setProjectsCount(data.length);
-      
+
       return data;
     } catch (error) {
       console.error('Error fetching projects:', error);
@@ -61,10 +62,27 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
           'Content-Type': 'application/json',
         },
       });
-
+  
       if (!response.ok) throw new Error('Erro ao carregar os dados do perfil');
-
+  
       const data = await response.json();
+      
+      // Se for empresa, busca dados adicionais
+      if (data.type === 'company' && data.id) {
+        const companyResponse = await fetch(`http://localhost:5000/api/company/${data.id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          setProfile({ ...data, ...companyData });
+          return;
+        }
+      }
+  
       setProfile(data);
     } catch (error) {
       console.error('Erro ao buscar os dados do perfil:', error);
@@ -127,8 +145,8 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
     setIsLoadingFollowers(true);
     try {
       const response = await fetch(`/api/users/${profile.userId}/followers`, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem('token')}` 
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
       });
 
@@ -156,15 +174,40 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
     setIsEditing(false);
   };
 
+  const renderHeader = () => {
+    if (profile?.type === 'company') {
+      return (
+        <CompanyHeader
+          profile={{
+            ...profile,
+            projectsCount,
+          }}
+          onEdit={startEditing}
+          onShowFollowers={fetchFollowers}
+          isLoadingFollowers={isLoadingFollowers}
+        />
+      );
+    }
+
+    return (
+      <ProfessionalHeader
+        profile={{
+          ...profile,
+          projectsCount,
+        }}
+        onEdit={startEditing}
+        onShowFollowers={fetchFollowers}
+        isLoadingFollowers={isLoadingFollowers}
+      />
+    );
+  };
+
   const renderTabContent = () => {
     switch (activeTab) {
       case 'info':
         return (
           <>
-            <AboutSection 
-              about={{ bio: profile?.bio }} 
-              onBioUpdate={handleBioUpdate} 
-            />
+            <AboutSection about={{ bio: profile?.bio }} onBioUpdate={handleBioUpdate} />
             <div className={styles.infoContent}>
               {recentProjects.length > 0 ? (
                 <RecentProjects projects={recentProjects} />
@@ -187,20 +230,9 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
   return (
     <div className={styles.container}>
       <ToastContainer />
-      <ProfileHeader
-        profile={{
-          ...profile,
-          projectsCount,
-        }}
-        onEdit={startEditing}
-        onShowFollowers={fetchFollowers}
-        isLoadingFollowers={isLoadingFollowers}
-      />
+      {profile && renderHeader()}
 
-
-      <section className={styles.tabContent}>
-        {profile && renderTabContent()}
-      </section>
+      <section className={styles.tabContent}>{profile && renderTabContent()}</section>
 
       {isEditing && (
         <EditProfileModal
@@ -213,15 +245,10 @@ const ProfileSection = ({ handleInputChange, updateProfile, isSubmitting, update
       )}
 
       {isFollowersModalOpen && (
-        <FollowersModal
-          followers={followers}
-          onClose={() => setIsFollowersModalOpen(false)}
-        />
+        <FollowersModal followers={followers} onClose={() => setIsFollowersModalOpen(false)} />
       )}
 
-      {updateMessage && (
-        <p className={styles.message}>{updateMessage}</p>
-      )}
+      {updateMessage && <p className={styles.message}>{updateMessage}</p>}
     </div>
   );
 };
