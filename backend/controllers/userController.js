@@ -1,10 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { validationResult } = require('express-validator');
 const User = require('../models/userModel');
 const ProfessionalProfileModel = require('../models/ProfessionalProfileModel');
 const CompanyProfileModel = require('../models/CompanyProfileModel');
 const ClientProfileModel = require('../models/ClientProfileModel');
-const generateUsername = require('../utils/generateUsername'); // Importa o gerador de username
+const generateUsername = require('../utils/generateUsername');
 
 // Função para gerar token JWT
 const generateToken = (id) => {
@@ -13,13 +14,30 @@ const generateToken = (id) => {
 
 // Registrar Usuário
 exports.registerUser = async (req, res) => {
-  const { name, email, password, type, location, specialties, experienceYears, certifications, portfolio, companyDetails } = req.body;
+  const {
+    name,
+    email,
+    password,
+    type,
+    location,
+    specialties,
+    experienceYears,
+    certifications,
+    portfolio,
+    companyDetails,
+  } = req.body;
+
+  // Validação dos dados de entrada
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
     // Verifica se o usuário já existe
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: 'Email already in use.' });
     }
 
     // Criptografa a senha
@@ -30,46 +48,92 @@ exports.registerUser = async (req, res) => {
     const username = generateUsername(name);
 
     // Cria o usuário
-    const user = await User.create({ name, username, email, password: hashedPassword, type, location });
+    const user = new User({ name, username, email, password: hashedPassword, type, location });
 
-    // Cria o perfil específico com base no tipo de usuário
+    // Criação de perfis específicos com base no tipo de usuário
+    let profile;
     if (type === 'professional') {
-      if (!specialties || !experienceYears) {
-        return res.status(400).json({ message: 'Professional profile requires specialties and experience years' });
+      if (!specialties || !Array.isArray(specialties) || specialties.length === 0) {
+        return res.status(400).json({ message: 'Specialties are required for professional profiles.' });
       }
-      await ProfessionalProfileModel.create({ userId: user._id, specialties, experienceYears, certifications, portfolio, location });
+      if (!experienceYears) {
+        return res.status(400).json({ message: 'Experience years are required for professional profiles.' });
+      }
+
+      profile = new ProfessionalProfileModel({
+        userId: user._id,
+        specialties,
+        experienceYears,
+        certifications,
+        portfolio,
+        location,
+      });
     } else if (type === 'company') {
       if (!companyDetails || !companyDetails.companyName || !companyDetails.services) {
-        return res.status(400).json({ message: 'Company profile requires company name and services' });
+        return res.status(400).json({ message: 'Company name and services are required for company profiles.' });
       }
-      await CompanyProfileModel.create({ userId: user._id, companyName: companyDetails.companyName, location: companyDetails.location, servicesOffered: companyDetails.services });
+
+      profile = new CompanyProfileModel({
+        userId: user._id,
+        companyName: companyDetails.companyName,
+        email,
+        location: companyDetails.location || location,
+        servicesOffered: companyDetails.services,
+      });
     } else if (type === 'client') {
-      await ClientProfileModel.create({ userId: user._id, fullName: name, email, location });
+      profile = new ClientProfileModel({
+        userId: user._id,
+        fullName: name,
+        email,
+        location,
+      });
     } else {
-      return res.status(400).json({ message: 'Invalid user type' });
+      return res.status(400).json({ message: 'Invalid user type.' });
+    }
+
+    // Salva o usuário e o perfil associado
+    await user.save();
+    try {
+      await profile.save();
+    } catch (error) {
+      await User.findByIdAndDelete(user._id); // Remove o usuário se falhar a criação do perfil
+      throw error;
     }
 
     // Gera token JWT
     const token = generateToken(user._id);
 
+    // Retorna os dados do usuário e do perfil criado
     res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      username: user.username,
-      email: user.email,
-      type: user.type,
-      location: user.location,
-      token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        type: user.type,
+        location: user.location,
+        token,
+      },
+      profile,
     });
   } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error during registration:', error.message, error.stack);
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Email or username already in use.' });
+    }
+    res.status(500).json({ message: 'Server error.' });
   }
 };
 
 // Login de Usuário
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
+
+  // Validação dos dados de entrada
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
     const user = await User.findOne({ email });
@@ -80,14 +144,17 @@ exports.loginUser = async (req, res) => {
       res.json({
         _id: user._id,
         name: user.name,
+        username: user.username,
         email: user.email,
+        type: user.type,
+        location: user.location,
         token,
       });
     } else {
-      res.status(401).json({ message: 'Invalid email or password' });
+      res.status(401).json({ message: 'Invalid email or password.' });
     }
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error('Error during login:', error.message, error.stack);
+    res.status(500).json({ message: 'Server error.' });
   }
 };

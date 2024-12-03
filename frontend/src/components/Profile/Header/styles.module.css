@@ -1,82 +1,86 @@
+:root {
+  --primary: #FF6B00;
+  --primary-light: #FF8534;
+  --background: #FFF4ED;
+  --gray: #64748B;
+  --border: #FFB37C;
+}
+
+.container {
+  padding: 1rem;
+}
+
 .header {
-  display: flex;
-  align-items: flex-start;
-  gap: 2rem;
-  padding: 2rem;
-  background: linear-gradient(to bottom right, white, #FFF4ED);
+  background: linear-gradient(145deg, white, var(--background));
   border-radius: 1rem;
-  box-shadow: 0 4px 20px rgba(255, 107, 0, 0.05);
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.profileSection {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
 }
 
 .imageContainer {
-  position: relative;
   flex-shrink: 0;
 }
 
 .imageWrapper {
   position: relative;
-  width: 9rem;
-  height: 9rem;
+  width: 120px;
+  height: 120px;
 }
 
-.image {
+.image, .fallbackIcon {
   width: 100%;
   height: 100%;
   border-radius: 1rem;
-  object-fit: cover;
-  border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.08);
-}
-
-.fallbackIcon {
-  width: 100%;
-  height: 100%;
-  border-radius: 1rem;
-  background: linear-gradient(to bottom right, #FFE4D4, #FFF4ED);
+  background: var(--background);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #FF6B00;
-  box-shadow: 0 4px 12px rgba(255, 107, 0, 0.08);
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .verifiedBadge {
   position: absolute;
-  bottom: -0.5rem;
-  right: -0.5rem;
-  background-color: #FF6B00;
-  color: white;
-  padding: 0.5rem;
-  border-radius: 0.75rem;
-  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
+  bottom: -8px;
+  right: -8px;
+  color: var(--primary);
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .editImageButton {
   position: absolute;
-  bottom: -0.5rem;
-  right: -0.5rem;
-  background-color: #FF6B00;
+  bottom: -8px;
+  right: -8px;
   color: white;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.75rem;
+  background: var(--primary);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
-  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
 }
 
 .editImageButton:hover {
-  background-color: #FF8534;
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
-.info {
+.mainInfo {
   flex: 1;
-  min-width: 0;
 }
 
 .nameContainer {
@@ -87,32 +91,30 @@
 }
 
 .name {
-  font-size: 1.875rem;
+  font-size: 2rem;
   font-weight: 700;
-  background: linear-gradient(to right, #FF6B00, #FF8534);
+  background: linear-gradient(to right, var(--primary), var(--primary-light));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   margin: 0;
 }
 
 .verifiedTag {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.75rem;
-  background-color: #FFF4ED;
-  color: #FF6B00;
+  background: var(--background);
+  color: var(--primary);
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-size: 0.875rem;
 }
 
 .locationContainer {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #64748B;
-  font-size: 0.875rem;
+  color: var(--gray);
   margin-bottom: 1rem;
 }
 
@@ -124,28 +126,23 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 1.5rem;
 }
 
 .specialty {
   padding: 0.5rem 1rem;
-  background-color: #FFF4ED;
-  border: 1px solid #FFB37C;
+  background: var(--background);
+  border: 1px solid var(--border);
   border-radius: 0.75rem;
+  color: var(--primary);
   font-size: 0.875rem;
-  color: #FF6B00;
-  box-shadow: 0 1px 2px rgba(255, 107, 0, 0.05);
-  transition: all 0.2s;
 }
 
-.specialty:hover {
-  background-color: #FFE4D4;
-}
-
-.metrics {
+.statsSection {
   display: flex;
   align-items: center;
   gap: 2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
 }
 
 .rating {
@@ -153,19 +150,17 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 1rem;
-  background-color: #FFF4ED;
+  background: var(--background);
   border-radius: 0.75rem;
-  box-shadow: 0 1px 2px rgba(255, 107, 0, 0.05);
 }
 
 .starIcon {
-  color: #FF6B00;
+  color: var(--primary);
 }
 
 .ratingValue {
-  font-weight: 700;
-  font-size: 1.25rem;
-  color: #2C3E50;
+  font-weight: 600;
+  color: var(--gray);
 }
 
 .stats {
@@ -175,111 +170,82 @@
 }
 
 .statItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   text-align: center;
 }
 
 .statValue {
-  font-weight: 700;
+  display: block;
   font-size: 1.25rem;
-  color: #2C3E50;
+  font-weight: 600;
+  color: var(--gray);
 }
 
 .statLabel {
   font-size: 0.875rem;
-  color: #64748B;
+  color: var(--gray);
+}
+
+.companyInfo {
+  margin-left: auto;
+}
+
+.companyName {
+  display: block;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.companyLabel {
+  font-size: 0.875rem;
+  color: var(--gray);
 }
 
 .followButton {
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 2rem;
   border-radius: 0.75rem;
-  font-weight: 500;
-  transition: all 0.2s;
   border: none;
-  cursor: pointer;
-  background-color: #FF6B00;
+  background: var(--primary);
   color: white;
-  box-shadow: 0 2px 8px rgba(255, 107, 0, 0.2);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1.5rem;
+}
+
+.followButton.following {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--gray);
 }
 
 .followButton:hover {
-  background-color: #FF8534;
   transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .followButton:disabled {
   opacity: 0.7;
   cursor: not-allowed;
-  transform: none;
-}
-
-.following {
-  background-color: white;
-  color: #2C3E50;
-  border: 1px solid #FFB37C;
-  box-shadow: 0 1px 2px rgba(255, 107, 0, 0.05);
-}
-
-.following:hover {
-  background-color: #FFF4ED;
-}
-
-/* Spinner Styles */
-.spinnerContainer {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 0.75rem;
-  min-height: 2.5rem;
-}
-
-.spinner {
-  animation: spin 1s linear infinite;
-  color: #FF6B00;
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @media (max-width: 768px) {
-  .header {
+  .profileSection {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: 1.5rem;
   }
-
-  .info {
-    width: 100%;
-    margin-top: 1.5rem;
-  }
-
-  .nameContainer {
+  
+  .statsSection {
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 1.5rem;
   }
-
-  .metrics {
-    flex-direction: column;
-    gap: 1rem;
+  
+  .companyInfo {
+    margin: 0;
+    text-align: center;
   }
-
-  .stats {
-    width: 100%;
-  }
-
+  
   .followButton {
     width: 100%;
-    margin-top: 1.5rem;
   }
 }
