@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import styles from './styles.module.css';
 
 const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
-  const [professionalId, setProfessionalId] = useState('');
+  const [professionalEmail, setProfessionalEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -13,8 +13,8 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
     setError('');
 
     try {
-      await onEmployeeAdded(professionalId);
-      setProfessionalId('');
+      await onEmployeeAdded(professionalEmail);
+      setProfessionalEmail('');
       onClose();
     } catch (error) {
       setError(error.message || 'Erro ao vincular profissional.');
@@ -32,13 +32,13 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
         
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label htmlFor="professionalId">ID do Profissional</label>
+            <label htmlFor="professionalEmail">Email do Profissional</label>
             <input
-              id="professionalId"
-              type="text"
-              value={professionalId}
-              onChange={(e) => setProfessionalId(e.target.value)}
-              placeholder="Digite o ID do profissional"
+              id="professionalEmail"
+              type="email"
+              value={professionalEmail}
+              onChange={(e) => setProfessionalEmail(e.target.value)}
+              placeholder="Digite o Email do profissional"
               required
               disabled={loading}
             />
@@ -60,7 +60,7 @@ const AddEmployeeModal = ({ isOpen, onClose, onEmployeeAdded }) => {
               className={styles.submitButton}
               disabled={loading}
             >
-              {loading ? 'Adicionando...' : 'Adicionar'}
+              {loading ? 'Vinculando...' : 'Vincular'}
             </button>
           </div>
         </form>

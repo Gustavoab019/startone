@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCertificate, FaProjectDiagram, FaStar, FaComments, FaUser, FaSearch, FaTachometerAlt } from 'react-icons/fa';
+import { FaCertificate, FaProjectDiagram, FaStar, FaComments, FaUser, FaSearch, FaTachometerAlt, FaUsers, FaCar } from 'react-icons/fa';
 import styles from './styles.module.css'; // Importa o CSS Module
 
 const Sidebar = ({ setSection, handleLogout }) => {
@@ -78,6 +78,19 @@ const Sidebar = ({ setSection, handleLogout }) => {
             >
               <FaSearch className={styles.icon} />
               Search
+            </li>
+            <li
+              className={`${styles.menuItem} ${activeSection === 'employees' ? styles.active : ''}`}
+              onClick={() => handleSectionClick('employees')}
+            >
+              <FaUsers className={styles.icon} />
+              Employees
+            </li><li
+              className={`${styles.menuItem} ${activeSection === 'vehicles' ? styles.active : ''}`}
+              onClick={() => handleSectionClick('vehicles')}
+            >
+              <FaCar className={styles.icon} />
+              Vehicles
             </li>
           </ul>
         </nav>

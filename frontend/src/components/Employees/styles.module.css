@@ -1,10 +1,11 @@
-/* styles.module.css */
+/* Base Container */
 .container {
   padding: 24px;
   background-color: #f8fafc;
   min-height: 100vh;
 }
 
+/* Header Section */
 .header {
   display: flex;
   justify-content: space-between;
@@ -41,6 +42,7 @@
   height: 20px;
 }
 
+/* Status Grid */
 .statusGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -68,11 +70,13 @@
   color: #1e293b;
 }
 
+/* Status Colors */
 .statusAvailable { border-left-color: #22c55e; }
 .statusUnavailable { border-left-color: #3b82f6; }
 .statusVacation { border-left-color: #eab308; }
-.statusLeave { border-left-color: #ef4444; }
+.statusProject { border-left-color: #3b82f6; }
 
+/* Table Styles */
 .tableWrapper {
   background: white;
   border-radius: 8px;
@@ -101,6 +105,7 @@
   font-size: 14px;
 }
 
+/* Employee Information */
 .employeeInfo {
   display: flex;
   flex-direction: column;
@@ -116,6 +121,7 @@
   font-size: 13px;
 }
 
+/* Status Badge */
 .badge {
   padding: 4px 8px;
   border-radius: 9999px;
@@ -123,20 +129,18 @@
   font-weight: 500;
 }
 
-.specialtiesList {
+/* Project Information */
+.projectInfo {
   display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
+  flex-direction: column;
 }
 
-.specialtyTag {
-  background: #dbeafe;
-  color: #1e40af;
-  padding: 2px 8px;
-  border-radius: 9999px;
-  font-size: 12px;
+.projectRole {
+  color: #64748b;
+  font-size: 13px;
 }
 
+/* Action Buttons */
 .actions {
   display: flex;
   gap: 8px;
@@ -144,7 +148,8 @@
 }
 
 .editButton,
-.deleteButton {
+.deleteButton,
+.assignButton {
   padding: 6px 12px;
   border-radius: 6px;
   font-size: 13px;
@@ -162,35 +167,147 @@
   color: #991b1b;
 }
 
+.assignButton {
+  background: #dcfce7;
+  color: #166534;
+}
+
 .editButton:hover { background: #bfdbfe; }
 .deleteButton:hover { background: #fecaca; }
+.assignButton:hover { background: #bbf7d0; }
 
-.errorMessage {
-  background: #fee2e2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
-  padding: 12px;
+/* Alert Messages */
+.alert {
+  padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 16px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 8px;
 }
 
-.closeError {
+.alertError {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.alertSuccess {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.closeAlert {
+  margin-left: auto;
   background: none;
   border: none;
-  color: #991b1b;
   cursor: pointer;
-  font-size: 18px;
+  color: inherit;
 }
 
+/* Remove from Project Button */
+.removeFromProject {
+  background: #fee2e2;
+  color: #991b1b;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-top: 4px;
+  border: 1px solid #fecaca;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.removeFromProject:hover {
+  background: #fecaca;
+  border-color: #fca5a5;
+}
+
+/* Loading State */
 .loading {
   text-align: center;
   padding: 24px;
   color: #64748b;
 }
 
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 500px;
+  background: white;
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.modalButton {
+  display: inline-block;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-weight: 500;
+}
+
+.modalButtonPrimary {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.modalButtonPrimary:hover {
+  background-color: #2563eb;
+}
+
+.modalButtonSecondary {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+
+.modalButtonSecondary:hover {
+  background-color: #cbd5e1;
+}
+
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalForm label {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.modalForm input,
+.modalForm select {
+  padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.modalForm input:focus,
+.modalForm select:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+/* Responsive Styles */
 @media (max-width: 768px) {
   .statusGrid {
     grid-template-columns: 1fr;
@@ -208,5 +325,17 @@
 
   .actions {
     flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .table th,
+  .table td {
+    font-size: 12px;
+    padding: 8px 12px;
   }
 }

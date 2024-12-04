@@ -1,53 +1,66 @@
 const Project = require('../models/projectModel.js');
 const User = require('../models/userModel');
 const Vehicle = require('../models/VehicleModel');
+const Employee = require('../models/EmployeeModel');
+const mongoose = require('mongoose');
+const { startSessionWithRetry } = require('../utils/mongooseUtils');
 
-// Função para buscar projetos do usuário
+// Função para buscar projetos do usuário (mantida igual)
 exports.getMyProjects = async (req, res) => {
   try {
-    const userId = req.user._id; // Certifique-se de usar req.user._id
+    const userId = req.user._id;
     const projects = await Project.find({ createdById: userId });
 
-    // Se não houver projetos, retorna uma lista vazia em vez de erro 404
     if (!projects || projects.length === 0) {
-      return res.status(200).json([]); // Retorna um array vazio ao invés de um erro
+      return res.status(200).json([]);
     }
 
-    res.status(200).json(projects); // Retorna os projetos encontrados
+    res.status(200).json(projects);
   } catch (error) {
     console.error('Error fetching projects:', error);
     res.status(500).json({ message: 'Error fetching projects.' });
   }
 };
 
-
-// Função para adicionar um novo projeto
+// Função para adicionar um novo projeto (atualizada para incluir lógica específica por tipo)
 exports.addProject = async (req, res) => {
   try {
     const { projectTitle, description, completionDate, status } = req.body;
 
-    // Verifique se todos os campos obrigatórios foram fornecidos
     if (!projectTitle || !description || !completionDate || !status) {
       return res.status(400).json({ message: 'All fields are required, including status.' });
     }
 
-    // Lista de status válidos
     const validStatuses = ['not started', 'in progress', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({ message: 'Invalid status value.' });
     }
 
-    const userId = req.user._id; // Certifique-se de usar req.user._id
-    const userType = req.user.type; // Tipo do usuário (profissional, cliente, empresa)
+    const userId = req.user._id;
+    const userType = req.user.type;
 
+    // Cria o projeto base
     const newProject = new Project({
       projectTitle,
       description,
       completionDate,
-      status, // Incluindo o status no novo projeto
+      status,
       createdById: userId,
       createdByType: userType,
     });
+
+    // Adiciona campos específicos baseado no tipo de usuário
+    switch (userType) {
+      case 'company':
+        newProject.company = userId;
+        break;
+      case 'professional':
+        newProject.professionals = [userId];
+        break;
+      case 'client':
+        newProject.client = userId;
+        break;
+    }
 
     const savedProject = await newProject.save();
     res.status(201).json(savedProject);
@@ -57,8 +70,7 @@ exports.addProject = async (req, res) => {
   }
 };
 
-
-// Função para adicionar participantes
+// Função para adicionar participantes (atualizada para lidar com diferentes tipos)
 exports.addParticipants = async (req, res) => {
   try {
     const { professionals, clients } = req.body;
@@ -73,10 +85,13 @@ exports.addParticipants = async (req, res) => {
       return res.status(404).json({ message: 'Project not found.' });
     }
 
-    // Adiciona os participantes ao projeto, garantindo que não haja duplicatas
-    project.participants = [
-      ...new Set([...project.participants, ...professionals, ...clients]),
-    ];
+    if (professionals) {
+      project.professionals = [...new Set([...project.professionals, ...professionals])];
+    }
+
+    if (clients) {
+      project.participants = [...new Set([...project.participants, ...clients])];
+    }
 
     const updatedProject = await project.save();
     res.status(200).json(updatedProject);
@@ -86,38 +101,80 @@ exports.addParticipants = async (req, res) => {
   }
 };
 
-// Fetch projects by userId where the user is either the creator or a participant
+// manageEmployees function
+exports.manageEmployees = async (req, res) => {
+  let session;
+  try {
+    session = await startSessionWithRetry(); // Inicia a sessão com lógica de retry
+    await session.startTransaction();
+
+    const { projectId } = req.params;
+    const { employeeId, role } = req.body;
+
+    const [project, employee] = await Promise.all([
+      Project.findById(projectId).session(session),
+      Employee.findById(employeeId).session(session)
+    ]);
+
+    // Validações
+    if (!project) throw new Error('Projeto não encontrado');
+    if (!employee) throw new Error('Funcionário não encontrado');
+    if (employee.currentProjectId) throw new Error('Funcionário já está em outro projeto');
+
+    // Atualiza projeto
+    project.employees.push({ employeeId, role, status: 'active' });
+
+    // Atualiza funcionário
+    employee.status = 'Em Projeto';
+    employee.currentProjectId = project._id;
+    employee.currentProjectRole = role;
+    employee.projectHistory.push({
+      projectId: project._id,
+      role,
+      startDate: new Date()
+    });
+
+    await Promise.all([
+      project.save({ session }),
+      employee.save({ session })
+    ]);
+
+    await session.commitTransaction();
+    res.status(200).json({ project, employee });
+
+  } catch (error) {
+    if (session) {
+      await session.abortTransaction();
+    }
+    console.error("Erro na transação:", error);
+    res.status(500).json({ message: error.message });
+  } finally {
+    if (session) {
+      session.endSession();
+      console.log("Sessão finalizada.");
+    }
+  }
+};
+
+// Demais funções mantidas iguais
 exports.getProjectsByUserId = async (req, res) => {
   try {
-    const { userId } = req.params; // Pegue o userId dos parâmetros da rota
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
 
-    // 1. Busque o usuário no UserModel usando o _id
-    const user = await User.findById(userId); // Supondo que o userId seja o ObjectId do usuário
-
-    // Verifica se o usuário existe
-    if (!user) {
-      return res.status(404).json({ message: 'Usuário não encontrado.' });
-    }
-
-    // 2. Agora busque os projetos onde esse usuário está envolvido
     const projects = await Project.find({
       $or: [
-        { createdById: user._id},           // Projetos criados pelo usuário
-        { professionals: user._id },         // Projetos onde o usuário é um profissional
-        { participants: user._id }           // Projetos onde o usuário é um participante
+        { createdById: user._id },
+        { professionals: user._id },
+        { participants: user._id },
+        { 'employees.employeeId': user._id }
       ]
     });
 
-    // Se não houver projetos, retorne um array vazio
-    if (!projects || projects.length === 0) {
-      return res.status(200).json([]); // Retorna um array vazio
-    }
-
-    // Retorne os projetos encontrados
-    res.status(200).json(projects);
+    res.status(200).json(projects || []);
   } catch (error) {
-    console.error('Erro ao buscar projetos para o usuário:', error);
-    res.status(500).json({ message: 'Erro ao buscar projetos para o usuário.' });
+    res.status(500).json({ message: 'Erro ao buscar projetos.' });
   }
 };
 
@@ -199,4 +256,63 @@ exports.getProjectVehicles = async (req, res) => {
     res.status(500).json({ message: 'Erro ao buscar veículos para o projeto.' });
   }
 };
+
+// Remove employee of project
+exports.removeEmployeeFromProject = async (req, res) => {
+  let session;
+  try {
+    session = await mongoose.startSession(); // Inicia uma sessão do Mongoose
+    await session.startTransaction(); // Inicia a transação
+
+    const { projectId, employeeId } = req.params;
+    console.log('Removing employee:', { projectId, employeeId });
+
+    // Busca o projeto e o funcionário usando a sessão iniciada
+    const project = await Project.findById(projectId).session(session);
+    const employee = await Employee.findById(employeeId).session(session);
+
+    // Validações
+    if (!project) throw new Error('Projeto não encontrado');
+    if (!employee) throw new Error('Funcionário não encontrado');
+
+    // Atualiza o projeto, removendo o funcionário da lista de empregados
+    project.employees = project.employees.filter(
+      (emp) => emp.employeeId.toString() !== employeeId
+    );
+
+    // Atualiza o status do funcionário e seu histórico de projetos
+    employee.status = 'Disponível';
+    employee.currentProjectId = null;
+    employee.currentProjectRole = null;
+
+    // Atualiza o histórico do funcionário
+    const history = employee.projectHistory.find(
+      (h) => h.projectId.toString() === projectId && !h.endDate
+    );
+    if (history) {
+      history.endDate = new Date();
+    }
+
+    // Salva o projeto e o funcionário de forma sequencial, usando a sessão
+    await project.save({ session });
+    await employee.save({ session });
+
+    // Conclui a transação
+    await session.commitTransaction();
+    res.status(200).json({ project, employee });
+
+  } catch (error) {
+    console.error('Remove employee error:', error);
+    if (session) {
+      await session.abortTransaction();
+    }
+    res.status(500).json({ message: error.message });
+  } finally {
+    if (session) {
+      session.endSession();
+      console.log("Sessão finalizada.");
+    }
+  }
+};
+
 

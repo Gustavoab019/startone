@@ -9,6 +9,8 @@ import EvaluationsSection from '../Evaluations/EvaluationsSection';
 import RatingsSection from '../Ratings/RatingsSection';
 import SearchUsersSection from '../Professional/SearchUsersSection';
 import Dashboard from '../Dashboard/Dashboard';
+import ManageEmployees from '../Employees/ManageEmployees';
+import DashboardVehicle from '../Vehicles/DashboardVehicle'
 
 const DashboardLayout = () => {
   const [profile, setProfile] = useState({
@@ -209,6 +211,10 @@ const DashboardLayout = () => {
         {section === 'evaluations' && <EvaluationsSection />}
         {section === 'ratings' && <RatingsSection />}
         {section === 'search' && <SearchUsersSection/>}
+        {section === 'employees' && <ManageEmployees/>}
+        {section === 'vehicles' && <DashboardVehicle/>}
+
+        
       </main>
     </div>
   );
