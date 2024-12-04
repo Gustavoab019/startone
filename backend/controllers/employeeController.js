@@ -16,32 +16,32 @@ const linkProfessionalToCompany = async (req, res) => {
   session.startTransaction();
 
   try {
-    const { professionalId } = req.body;
+    const { professionalEmail } = req.body;
 
     // Buscar o perfil da empresa usando o userId do usuário autenticado
     const companyProfile = await CompanyProfile.findOne({ userId: req.user._id }).session(session);
     if (!companyProfile) {
       throw new Error('Perfil da empresa não encontrado.');
     }
-    
+
     const companyId = companyProfile._id;
 
-    if (!validateMongoIds(companyId, professionalId)) {
-      return res.status(400).json({ error: 'IDs inválidos.' });
+    // Buscar usuário pelo email
+    const user = await User.findOne({ email: professionalEmail }).session(session);
+    if (!user) {
+      throw new Error('Profissional não encontrado com o email fornecido.');
     }
 
-    const user = await User.findById(professionalId).session(session);
-    const professionalProfile = await ProfessionalProfile.findOne({ userId: professionalId }).session(session);
-
-    if (!user || !professionalProfile) {
-      throw new Error('Dados do profissional não encontrados');
+    const professionalProfile = await ProfessionalProfile.findOne({ userId: user._id }).session(session);
+    if (!professionalProfile) {
+      throw new Error('Perfil profissional não encontrado.');
     }
 
-    let employee = await Employee.findOne({ userId: professionalId }).session(session);
+    let employee = await Employee.findOne({ userId: user._id }).session(session);
 
     if (!employee) {
       employee = new Employee({
-        userId: professionalId,
+        userId: user._id,
         position: professionalProfile.specialties[0] || 'Não especificado',
         status: 'Disponível',
         companyId: companyId,
@@ -73,8 +73,8 @@ const linkProfessionalToCompany = async (req, res) => {
   } catch (error) {
     await session.abortTransaction();
     console.error('Erro ao vincular profissional:', error);
-    res.status(error.message.includes('não') ? 404 : 500).json({ 
-      error: error.message || 'Erro ao vincular profissional. Tente novamente mais tarde.' 
+    res.status(error.message.includes('não') ? 404 : 500).json({
+      error: error.message || 'Erro ao vincular profissional. Tente novamente mais tarde.'
     });
   } finally {
     session.endSession();
@@ -246,119 +246,59 @@ const getCompanyEmployees = async (req, res) => {
 
 const updateEmployeeData = async (req, res) => {
   const session = await mongoose.startSession();
-  session.startTransaction();
+  await session.startTransaction();
 
   try {
     const { employeeId } = req.params;
-    const updateData = req.body;
+    const { status, position } = req.body;
 
-    // Buscar o perfil da empresa usando o userId do usuário autenticado
-    const companyProfile = await CompanyProfile.findOne({ userId: req.user._id }).session(session);
-    if (!companyProfile) {
-      throw new Error('Perfil da empresa não encontrado.');
-    }
-    
-    const companyId = companyProfile._id;
+    const employee = await Employee.findById(employeeId).session(session);
+    if (!employee) throw new Error('Funcionário não encontrado');
 
-    if (!validateMongoIds(companyId, employeeId)) {
-      return res.status(400).json({ error: 'IDs inválidos.' });
+    if (status && employee.currentProjectId) {
+      throw new Error('Não é possível alterar status de funcionário em projeto');
     }
 
-    // Verificar se o funcionário existe e pertence à empresa
-    const employee = await Employee.findOne({ 
-      _id: employeeId,
-      companyId: companyId
-    }).session(session);
-
-    if (!employee) {
-      throw new Error('Funcionário não encontrado ou não pertence a esta empresa.');
+    if (position) employee.position = position;
+    if (status && !employee.currentProjectId) {
+      employee.status = status;
     }
 
-    // Campos permitidos para atualização
-    const allowedUpdates = {
-      position: updateData.position,
-      status: updateData.status
-    };
-
-    // Filtrar apenas os campos que foram fornecidos
-    Object.keys(allowedUpdates).forEach(key => 
-      allowedUpdates[key] === undefined && delete allowedUpdates[key]
-    );
-
-    // Validar status se foi fornecido
-    if (allowedUpdates.status && !['Disponível', 'Indisponível', 'Férias', 'Licença'].includes(allowedUpdates.status)) {
-      throw new Error('Status inválido.');
-    }
-
-    // Atualizar dados do funcionário
-    Object.assign(employee, allowedUpdates);
-    await employee.save({ session });
-
-    // Buscar dados completos atualizados do funcionário
-    const updatedEmployee = await Employee.aggregate([
-      {
-        $match: { _id: employee._id }
-      },
-      {
-        $lookup: {
-          from: 'users',
-          localField: 'userId',
-          foreignField: '_id',
-          as: 'userData'
-        }
-      },
-      {
-        $lookup: {
-          from: 'professionalprofiles',
-          localField: 'userId',
-          foreignField: 'userId',
-          as: 'professionalData'
-        }
-      },
-      {
-        $unwind: {
-          path: '$userData',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $unwind: {
-          path: '$professionalData',
-          preserveNullAndEmptyArrays: true
-        }
-      },
-      {
-        $project: {
-          _id: 1,
-          userId: 1,
-          position: 1,
-          status: 1,
-          companyId: 1,
-          createdAt: 1,
-          updatedAt: 1,
-          userName: '$userData.name',
-          userEmail: '$userData.email',
-          specialties: '$professionalData.specialties',
-          experienceYears: '$professionalData.experienceYears',
-          certifications: '$professionalData.certifications',
-          availability: '$professionalData.availability'
-        }
-      }
-    ]).session(session);
-
+    const updatedEmployee = await employee.save({ session });
     await session.commitTransaction();
-
-    res.status(200).json({
-      message: 'Dados do funcionário atualizados com sucesso.',
-      employee: updatedEmployee[0]
-    });
+    
+    res.status(200).json({ employee: updatedEmployee });
 
   } catch (error) {
     await session.abortTransaction();
-    console.error('Erro ao atualizar dados do funcionário:', error);
-    res.status(error.message.includes('não') ? 404 : 500).json({ 
-      error: error.message || 'Erro ao atualizar dados do funcionário. Tente novamente mais tarde.' 
-    });
+    res.status(500).json({ message: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+const getCurrentProjectDetails = async (req, res) => {
+  const session = await mongoose.startSession();
+  await session.startTransaction();
+
+  try {
+    const { employeeId } = req.params;
+    const employee = await Employee.findById(employeeId)
+      .populate('projectHistory.projectId')
+      .session(session);
+
+    if (!employee?.status === 'Em Projeto') {
+      return res.status(404).json({ message: 'Funcionário não está em projeto.' });
+    }
+
+    const currentProject = employee.projectHistory
+      .find(ph => !ph.endDate)?.projectId;
+
+    await session.commitTransaction();
+    res.status(200).json({ project: currentProject });
+  } catch (error) {
+    await session.abortTransaction();
+    res.status(500).json({ message: error.message });
   } finally {
     session.endSession();
   }
@@ -368,5 +308,6 @@ module.exports = {
   linkProfessionalToCompany,
   unlinkProfessionalFromCompany,
   getCompanyEmployees,
-  updateEmployeeData
+  updateEmployeeData,
+  getCurrentProjectDetails
 };

@@ -14,5 +14,7 @@ router.get('/company', protect, employeeController.getCompanyEmployees);
 
 router.put('/:employeeId', protect, employeeController.updateEmployeeData);
 
+router.get('/:employeeId/project', protect, employeeController.getCurrentProjectDetails);
+
 
 module.exports = router;
