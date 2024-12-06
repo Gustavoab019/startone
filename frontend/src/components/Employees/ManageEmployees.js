@@ -104,19 +104,24 @@ const ManageEmployees = () => {
       setError("Todos os campos são obrigatórios");
       return;
     }
+    
     setActionLoading(true);
     try {
-      await axios.post(
+      const response = await axios.post(
         `/api/projects/${projectId}/employees`,
         { employeeId, role },
         getAuthConfig()
       );
-      await fetchEmployees();
-      setIsAssignModalOpen(false);
-      setSelectedEmployeeForProject(null);
-      showSuccess("Funcionário atribuído ao projeto com sucesso");
+      
+      if (response.data) {
+        await fetchEmployees();
+        setIsAssignModalOpen(false);
+        setSelectedEmployeeForProject(null);
+        showSuccess("Funcionário atribuído ao projeto com sucesso");
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao atribuir funcionário ao projeto");
+      console.error('Assignment error:', err.response?.data);
+      setError(err.response?.data?.message || "Erro ao atribuir funcionário ao projeto");
     } finally {
       setActionLoading(false);
     }
@@ -163,6 +168,7 @@ const ManageEmployees = () => {
       }
     }
   };
+
 
   const handleRemoveFromProject = async (projectId, employeeId) => {
     if (!projectId || !employeeId) {
@@ -334,7 +340,7 @@ const ManageEmployees = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => handleRemoveEmployee(employee._id)}
+                      onClick={() => handleRemoveEmployee(employee.userId)}
                       className={styles.deleteButton}
                       disabled={actionLoading}
                     >

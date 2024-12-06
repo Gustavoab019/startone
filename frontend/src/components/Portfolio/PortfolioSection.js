@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import ProjectCard from './ProjectCard';
 import AddProjectModal from './Modals/AddProjectModal';
 import AddParticipantsModal from './Modals/AddParticipantsModal';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import styles from './styles.module.css';
 
@@ -25,7 +25,6 @@ const PortfolioSection = ({ onProjectCount }) => {
   const [isAddProjectModalOpen, setIsAddProjectModalOpen] = useState(false);
   const [isAddParticipantsModalOpen, setIsAddParticipantsModalOpen] = useState(false);
 
-  // Função para voltar à página anterior
   const handleBack = () => {
     navigate('/profile');
   };
@@ -137,8 +136,7 @@ const PortfolioSection = ({ onProjectCount }) => {
       }
   
       const data = await response.json();
-      console.log('Project updated successfully:', data);
-  
+      
       setProjects((prevProjects) =>
         prevProjects.map((project) =>
           project._id === updatedProject._id ? data.project : project
@@ -153,40 +151,56 @@ const PortfolioSection = ({ onProjectCount }) => {
 
   return (
     <div className={styles.section}>
-      <div className={styles.sectionHeader}>
-        {location.pathname === '/portfolio' && (
-          <button 
-            onClick={handleBack}
-            className={styles.backButton}
-          >
-            <ArrowLeft size={20} />
-            Voltar
-          </button>
-        )}
-        <h3 className={styles.title}>Projects</h3>
+      <div className={styles.header}>
+        <div className={styles.headerLeft}>
+          {location.pathname === '/portfolio' && (
+            <button onClick={handleBack} className={styles.backButton}>
+              <ArrowLeft size={20} />
+              Voltar
+            </button>
+          )}
+          <h1 className={styles.title}>Projetos</h1>
+        </div>
+        <button onClick={() => setIsAddProjectModalOpen(true)} className={styles.addButton}>
+          <Plus size={20} />
+          Adicionar Projeto
+        </button>
+      </div>
+
+      <div className={styles.statsCard}>
+        <div className={styles.statsLabel}>Em Andamento</div>
+        <div className={styles.statsValue}>{projects.length} projetos</div>
       </div>
 
       {fetchError && <p className={styles.error}>{fetchError}</p>}
       {isLoading ? (
         <p>Loading projects...</p>
       ) : (
-        <div className={styles.cardsGrid}>
-          {projects.length > 0 ? (
-            projects.map((project) => (
-              <ProjectCard
-                key={project._id}
-                project={project}
-                setSelectedProject={setSelectedProject}
-                onEdit={updateProject}
-              />
-            ))
-          ) : (
-            <p>No projects added.</p>
-          )}
+        <div className={styles.tableContainer}>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Projeto</th>
+                <th>Funcionários</th>
+                <th>Status</th>
+                <th>Data Prevista</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {projects.map((project) => (
+                <ProjectCard
+                  key={project._id}
+                  project={project}
+                  setSelectedProject={setSelectedProject}
+                  onEdit={updateProject}
+                />
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
-      <button onClick={() => setIsAddProjectModalOpen(true)}>Add New Project</button>
       <AddProjectModal
         isOpen={isAddProjectModalOpen}
         onClose={() => setIsAddProjectModalOpen(false)}
@@ -195,7 +209,6 @@ const PortfolioSection = ({ onProjectCount }) => {
         setNewProject={setNewProject}
       />
 
-      <button onClick={() => setIsAddParticipantsModalOpen(true)}>Add Participants to Project</button>
       <AddParticipantsModal
         isOpen={isAddParticipantsModalOpen}
         onClose={() => setIsAddParticipantsModalOpen(false)}

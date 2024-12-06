@@ -3,7 +3,7 @@ const User = require('../models/userModel');
 const Vehicle = require('../models/VehicleModel');
 const Employee = require('../models/EmployeeModel');
 const mongoose = require('mongoose');
-const { startSessionWithRetry } = require('../utils/mongooseUtils');
+const { withTransaction } = require('../utils/mongooseUtils');
 
 // Função para buscar projetos do usuário (mantida igual)
 exports.getMyProjects = async (req, res) => {
@@ -103,58 +103,57 @@ exports.addParticipants = async (req, res) => {
 
 // manageEmployees function
 exports.manageEmployees = async (req, res) => {
-  let session;
   try {
-    session = await startSessionWithRetry(); // Inicia a sessão com lógica de retry
-    await session.startTransaction();
-
     const { projectId } = req.params;
     const { employeeId, role } = req.body;
 
-    const [project, employee] = await Promise.all([
-      Project.findById(projectId).session(session),
-      Employee.findById(employeeId).session(session)
-    ]);
+    const result = await withTransaction(async (session) => {
+      const [project, employee] = await Promise.all([
+        Project.findById(projectId).session(session),
+        Employee.findById(employeeId).session(session)
+      ]);
 
-    // Validações
-    if (!project) throw new Error('Projeto não encontrado');
-    if (!employee) throw new Error('Funcionário não encontrado');
-    if (employee.currentProjectId) throw new Error('Funcionário já está em outro projeto');
+      if (!project) throw new Error('Projeto não encontrado');
+      if (!employee) throw new Error('Funcionário não encontrado');
 
-    // Atualiza projeto
-    project.employees.push({ employeeId, role, status: 'active' });
+      const existingEmployee = project.employees.find(
+        (emp) => emp.employeeId.toString() === employeeId
+      );
 
-    // Atualiza funcionário
-    employee.status = 'Em Projeto';
-    employee.currentProjectId = project._id;
-    employee.currentProjectRole = role;
-    employee.projectHistory.push({
-      projectId: project._id,
-      role,
-      startDate: new Date()
+      if (existingEmployee) {
+        if (existingEmployee.status === 'inactive') {
+          existingEmployee.status = 'active';
+          existingEmployee.role = role;
+        } else {
+          throw new Error('Funcionário já está ativo neste projeto.');
+        }
+      } else {
+        project.employees.push({ employeeId, role, status: 'active' });
+      }
+
+      employee.status = 'Em Projeto';
+      employee.currentProjectId = project._id;
+      employee.projectHistory.push({
+        projectId: project._id,
+        role,
+        startDate: new Date()
+      });
+
+      await Promise.all([
+        project.save({ session }),
+        employee.save({ session })
+      ]);
+
+      return { project, employee };
     });
 
-    await Promise.all([
-      project.save({ session }),
-      employee.save({ session })
-    ]);
-
-    await session.commitTransaction();
-    res.status(200).json({ project, employee });
-
+    res.status(200).json({ success: true, ...result });
   } catch (error) {
-    if (session) {
-      await session.abortTransaction();
-    }
-    console.error("Erro na transação:", error);
-    res.status(500).json({ message: error.message });
-  } finally {
-    if (session) {
-      session.endSession();
-      console.log("Sessão finalizada.");
-    }
+    console.error('Erro ao gerenciar funcionários:', error);
+    res.status(400).json({ success: false, message: error.message });
   }
 };
+
 
 // Demais funções mantidas iguais
 exports.getProjectsByUserId = async (req, res) => {
@@ -259,60 +258,55 @@ exports.getProjectVehicles = async (req, res) => {
 
 // Remove employee of project
 exports.removeEmployeeFromProject = async (req, res) => {
-  let session;
+  let session = null;
   try {
-    session = await mongoose.startSession(); // Inicia uma sessão do Mongoose
-    await session.startTransaction(); // Inicia a transação
+    session = await mongoose.startSession();
+    await session.startTransaction();
 
     const { projectId, employeeId } = req.params;
-    console.log('Removing employee:', { projectId, employeeId });
 
-    // Busca o projeto e o funcionário usando a sessão iniciada
+    if (!mongoose.Types.ObjectId.isValid(projectId) || !mongoose.Types.ObjectId.isValid(employeeId)) {
+      return res.status(400).json({ message: 'IDs inválidos.' });
+    }
+
     const project = await Project.findById(projectId).session(session);
     const employee = await Employee.findById(employeeId).session(session);
 
-    // Validações
     if (!project) throw new Error('Projeto não encontrado');
     if (!employee) throw new Error('Funcionário não encontrado');
 
-    // Atualiza o projeto, removendo o funcionário da lista de empregados
-    project.employees = project.employees.filter(
-      (emp) => emp.employeeId.toString() !== employeeId
+    const employeeInProject = project.employees.find(
+      (emp) => emp.employeeId.toString() === employeeId
     );
+    if (!employeeInProject) {
+      throw new Error('Funcionário não está associado a este projeto.');
+    }
 
-    // Atualiza o status do funcionário e seu histórico de projetos
+    employeeInProject.status = 'inactive';
+
     employee.status = 'Disponível';
     employee.currentProjectId = null;
     employee.currentProjectRole = null;
 
-    // Atualiza o histórico do funcionário
     const history = employee.projectHistory.find(
       (h) => h.projectId.toString() === projectId && !h.endDate
     );
-    if (history) {
-      history.endDate = new Date();
-    }
+    if (history) history.endDate = new Date();
 
-    // Salva o projeto e o funcionário de forma sequencial, usando a sessão
     await project.save({ session });
     await employee.save({ session });
 
-    // Conclui a transação
     await session.commitTransaction();
-    res.status(200).json({ project, employee });
+    res.status(200).json({ message: 'Funcionário removido do projeto com sucesso.', project, employee });
 
   } catch (error) {
-    console.error('Remove employee error:', error);
-    if (session) {
-      await session.abortTransaction();
-    }
+    console.error('Erro ao remover funcionário:', error);
+    if (session?.inTransaction()) await session.abortTransaction();
     res.status(500).json({ message: error.message });
   } finally {
-    if (session) {
-      session.endSession();
-      console.log("Sessão finalizada.");
-    }
+    if (session) await session.endSession();
   }
 };
+
 
 

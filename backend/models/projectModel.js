@@ -55,4 +55,26 @@ const projectSchema = new mongoose.Schema({
   completionDate: Date,
 }, { timestamps: true });
 
+projectSchema.virtual('activeEmployeesCount').get(function() {
+  return this.employees.filter(emp => emp.status === 'active').length;
+});
+
+projectSchema.set('toJSON', { virtuals: true });
+
+projectSchema.methods.addEmployee = function (employeeId, role) {
+  const existing = this.employees.find(
+    (emp) => emp.employeeId.toString() === employeeId.toString()
+  );
+  if (existing) {
+    if (existing.status === 'inactive') {
+      existing.status = 'active';
+      existing.role = role;
+    } else {
+      throw new Error('Funcionário já está ativo neste projeto.');
+    }
+  } else {
+    this.employees.push({ employeeId, role, status: 'active' });
+  }
+};
+
 module.exports = mongoose.model('Project', projectSchema);
