@@ -50,9 +50,20 @@ const EmployeeSchema = new Schema({
   }
 });
 
+// Atualiza o campo `updatedAt` antes de salvar
 EmployeeSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
+
+// Método para adicionar um projeto ao histórico
+EmployeeSchema.methods.addToProjectHistory = function (projectId, role) {
+  const exists = this.projectHistory.some(
+    (entry) => entry.projectId.toString() === projectId.toString()
+  );
+  if (!exists) {
+    this.projectHistory.push({ projectId, role, startDate: new Date() });
+  }
+};
 
 module.exports = mongoose.model('Employee', EmployeeSchema);
