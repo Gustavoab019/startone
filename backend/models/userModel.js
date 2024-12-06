@@ -1,73 +1,67 @@
 const mongoose = require('mongoose');
 
-const userSchema = mongoose.Schema({
+const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: true
+    required: true,
+  },
+  username: {
+    type: String,
+    unique: true,
+    required: true, // Unique username for each user
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
   },
   password: {
     type: String,
-    required: true
+    required: true,
   },
   type: {
     type: String,
-    enum: ['professional', 'company', 'client'], // Define o tipo de usuário
-    required: true
+    enum: ['professional', 'company', 'client'], // User type
+    required: true,
   },
-  specialties: {
-    type: [String], // Exemplo: ['carpenter', 'electrician']
-  },
-  experienceYears: {
-    type: Number // Anos de experiência
-  },
-  certifications: [
-    {
-      name: { type: String, required: true },           // Nome da Certificação
-      institution: { type: String, required: true },    // Instituição emissora
-      dateObtained: { type: Date, required: true },     // Data de obtenção
-    }
-  ],
-  portfolio: [
-    {
-      projectTitle: { type: String, required: true },
-      description: { type: String, required: true },
-      images: [String], // Array de URLs de imagens
-      completionDate: { type: Date, required: true }
-    }
-  ],
+  bio: { type: String, required: false }, // Biografia do profissional
   location: {
-    type: String,
-    required: function () {
-      return this.type === 'professional';
-    },
+    type: String, // User's location
+    required: true,
   },
-  companyDetails: {
-    companyName: { type: String },
-    location: { type: String }, 
-    services: [String]
+  companyProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'CompanyProfile', // Links to the CompanyProfile model
   },
-  employees: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'  // Referência aos profissionais
-    }
-  ],
+  professionalProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ProfessionalProfile', // Links to the ProfessionalProfile model
+  },
+  clientProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'ClientProfile', // Links to the ClientProfile model
+  },
   averageRating: {
     type: Number,
-    default: 0, // Começa como 0 até o profissional receber avaliações
+    default: 0, // Starts at 0 until reviews are added
   },
   isAdmin: {
     type: Boolean,
-    default: false
-  }
-}, {
-  timestamps: true
-});
+    default: false,
+  },
+  followers: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ], // List of followers
+  following: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ], // List of users this user is following
+}, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
 

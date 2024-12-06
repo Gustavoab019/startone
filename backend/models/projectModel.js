@@ -1,44 +1,80 @@
 const mongoose = require('mongoose');
 
-const projectSchema = mongoose.Schema(
-  {
-    projectTitle: {
-      type: String,
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    professional: {
+const projectSchema = new mongoose.Schema({
+  projectTitle: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  createdById: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  createdByType: {
+    type: String,
+    required: true,
+  },
+  professionals: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  company: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  employees: [{
+    employeeId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
+      ref: 'Employee',
+      required: true
     },
-    company: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false, // opcional, conforme discutido anteriormente
-    },
-    client: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: false, // opcional
-    },
-    completionDate: {
-      type: Date,
-      required: false, // opcional
-    },
+    role: String,
     status: {
       type: String,
-      enum: ['not started', 'in progress', 'completed'], // define os status possíveis
-      default: 'not started', // padrão ao criar um projeto
-    },
+      enum: ['active', 'inactive'],
+      default: 'active'
+    }
+  }],
+  participants: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  status: {
+    type: String,
+    enum: ['not started', 'in progress', 'completed', 'cancelled'],
+    default: 'in progress',
   },
-  {
-    timestamps: true,
-  }
-);
+  completionDate: Date,
+}, { timestamps: true });
 
-const Project = mongoose.model('Project', projectSchema);
-module.exports = Project;
+projectSchema.virtual('activeEmployeesCount').get(function() {
+  return this.employees.filter(emp => emp.status === 'active').length;
+});
+
+projectSchema.set('toJSON', { virtuals: true });
+
+projectSchema.methods.addEmployee = function (employeeId, role) {
+  const existing = this.employees.find(
+    (emp) => emp.employeeId.toString() === employeeId.toString()
+  );
+  if (existing) {
+    if (existing.status === 'inactive') {
+      existing.status = 'active';
+      existing.role = role;
+    } else {
+      throw new Error('Funcionário já está ativo neste projeto.');
+    }
+  } else {
+    this.employees.push({ employeeId, role, status: 'active' });
+  }
+};
+
+module.exports = mongoose.model('Project', projectSchema);

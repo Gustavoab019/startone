@@ -1,25 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import AuthPage from './components/Auth/components/AuthPage'; // Fix the path
+import Profile from './components/Dashboard/DashboardLayout';
+import EvaluationForm from './components/Evaluations/EvaluationForm';
+import PortfolioSection from './components/Portfolio/PortfolioSection';
+import EvaluationsSection from './components/Evaluations/EvaluationsSection';
+import DashboardVehicles from './components/Vehicles/DashboardVehicle';
+import ManageEmployees from './components/Employees/ManageEmployees';
 
-function App() {
+
+
+
+const App = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<AuthPage />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/evaluate/:id" element={<EvaluationForm />} />
+        <Route path="/portfolio" element={<PortfolioSection />} />
+        <Route path="/evaluations" element={<EvaluationsSection />} />
+        <Route path="/vehicles" element={<DashboardVehicles />} />
+        <Route path="/employees" element={<ManageEmployees />} />
+
+
+
+
+
+
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;

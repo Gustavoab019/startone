@@ -1,0 +1,251 @@
+:root {
+  --primary: #FF6B00;
+  --primary-light: #FF8534;
+  --background: #FFF4ED;
+  --gray: #64748B;
+  --border: #FFB37C;
+}
+
+.container {
+  padding: 1rem;
+}
+
+.header {
+  background: linear-gradient(145deg, white, var(--background));
+  border-radius: 1rem;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.profileSection {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+}
+
+.imageContainer {
+  flex-shrink: 0;
+}
+
+.imageWrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.image, .fallbackIcon {
+  width: 100%;
+  height: 100%;
+  border-radius: 1rem;
+  background: var(--background);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.verifiedBadge {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  color: var(--primary);
+  background: white;
+  border-radius: 50%;
+  padding: 4px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.editImageButton {
+  position: absolute;
+  bottom: -8px;
+  right: -8px;
+  color: white;
+  background: var(--primary);
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.editImageButton:hover {
+  transform: scale(1.1);
+}
+
+.mainInfo {
+  flex: 1;
+}
+
+.nameContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.name {
+  font-size: 2rem;
+  font-weight: 700;
+  background: linear-gradient(to right, var(--primary), var(--primary-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+}
+
+.verifiedTag {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--background);
+  color: var(--primary);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+}
+
+.locationContainer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--gray);
+  margin-bottom: 1rem;
+}
+
+.dot {
+  margin: 0 0.25rem;
+}
+
+.specialties {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.specialty {
+  padding: 0.5rem 1rem;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  color: var(--primary);
+  font-size: 0.875rem;
+}
+
+.statsSection {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+}
+
+.rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--background);
+  border-radius: 0.75rem;
+}
+
+.starIcon {
+  color: var(--primary);
+}
+
+.ratingValue {
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2rem;
+}
+
+.statItem {
+  text-align: center;
+}
+
+.statValue {
+  display: block;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.statLabel {
+  font-size: 0.875rem;
+  color: var(--gray);
+}
+
+.companyInfo {
+  margin-left: auto;
+}
+
+.companyName {
+  display: block;
+  font-weight: 600;
+  color: var(--gray);
+}
+
+.companyLabel {
+  font-size: 0.875rem;
+  color: var(--gray);
+}
+
+.followButton {
+  padding: 0.75rem 2rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: var(--primary);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 1.5rem;
+}
+
+.followButton.following {
+  background: white;
+  border: 1px solid var(--border);
+  color: var(--gray);
+}
+
+.followButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.followButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .profileSection {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .statsSection {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .companyInfo {
+    margin: 0;
+    text-align: center;
+  }
+  
+  .followButton {
+    width: 100%;
+  }
+}

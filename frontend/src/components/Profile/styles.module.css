@@ -1,0 +1,94 @@
+:root {
+  --color-primary: #FF6B00;
+  --color-primary-hover: #FF8534;
+  --color-neutral-dark: #2C3E50;
+  --color-success: #22C55E;
+  --color-error: #EF4444;
+  --color-text: #2C3E50;
+  --color-accent: #FFF4ED;
+
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+
+  --font-family: 'Inter', sans-serif;
+  --border-radius: 8px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  color: var(--color-text);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.tabs {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.tabButton {
+  flex: 1;
+  padding: var(--spacing-sm);
+  background: none;
+  border: none;
+  color: var(--color-text);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--border-radius);
+  transition: background 0.2s, color 0.2s;
+}
+
+.tabButton.active {
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(255, 107, 0, 0.2);
+}
+
+.tabButton:hover:not(.active) {
+  background: var(--color-accent);
+  color: var(--color-primary);
+}
+
+.tabContent {
+  min-height: 300px;
+}
+
+.message {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius);
+  text-align: center;
+}
+
+.message.success {
+  background-color: #DCFCE7;
+  color: #166534;
+}
+
+.message.error {
+  background-color: #FEE2E2;
+  color: #991B1B;
+}
+
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabButton {
+    width: 100%;
+  }
+}

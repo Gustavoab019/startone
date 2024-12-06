@@ -1,74 +1,31 @@
 const express = require('express');
 const router = express.Router();
+const projectController = require('../controllers/projectController');
 const { protect } = require('../middlewares/authMiddleware');
-const Project = require('../models/projectModel');
 
-// Rota para criar um novo projeto
-router.post('/', protect, async (req, res) => {
-    const { projectTitle, description, company, client, completionDate } = req.body;
-  
-    try {
-      console.log(req.body); // Adicione isso para verificar se os dados estão sendo recebidos corretamente
-  
-      const project = new Project({
-        projectTitle,
-        description,
-        professional: req.user._id,  // O profissional que cria o projeto
-        company: company || undefined,  // Opcional
-        client: client || undefined,    // Opcional
-        completionDate: completionDate || undefined  // Opcional
-      });
-  
-      const createdProject = await project.save();
-      res.status(201).json(createdProject);
-    } catch (error) {
-      console.error('Error creating project:', error);  // Mostra o erro no console
-      res.status(400).json({ message: 'Error creating project', error: error.message });
-    }
-  });
-// Rota para listar projetos
-router.get('/', protect, async (req, res) => {
-  try {
-    const { filterBy, sortBy } = req.query;
+// Rota para buscar os projetos do usuário
+router.get('/my-projects', protect, projectController.getMyProjects);
 
-    let query = {};
-    
-    // Se filterBy for fornecido, aplicamos o filtro
-    if (filterBy && filterBy === 'projectStatus') {
-      query.status = sortBy; // filtra por status com o valor recebido em sortBy
-    }
+// Rota para adicionar um novo projeto
+router.post('/', protect, projectController.addProject);
 
-    const projects = await Project.find(query)
-      .populate('company', 'name')
-      .populate('professional', 'name');
+// Rota para adicionar participantes a um projeto
+router.put('/:projectId/add-participants', protect, projectController.addParticipants);
 
-    res.json(projects);
-  } catch (error) {
-    console.error('Error fetching projects:', error);
-    res.status(500).json({ message: 'Error fetching projects', error: error.message });
-  }
-});
+// Rota para buscar projetos de um usuário específico
+router.get('/user/:userId', protect, projectController.getProjectsByUserId);
 
-// Atualizar status de um projeto
-router.put('/:id/status', protect, async (req, res) => {
-  try {
-    const project = await Project.findById(req.params.id);
+// Rota para atualizar o status do projeto
+router.put('/:projectId/status', projectController.updateProjectStatus);
 
-    if (!project) {
-      return res.status(404).json({ message: 'Project not found' });
-    }
+// Rota para atualizar projetos
+router.put('/:projectId', protect, projectController.updateProject);
 
-    // Atualiza o status do projeto com o valor recebido no corpo da requisição
-    project.status = req.body.status || project.status;
+router.get('/:projectId/vehicles', protect, projectController.getProjectVehicles);
 
-    const updatedProject = await project.save();
+router.post('/:projectId/employees', protect, projectController.manageEmployees);
 
-    res.status(200).json(updatedProject);
-  } catch (error) {
-    console.error('Error updating project status:', error);
-    res.status(500).json({ message: 'Error updating project status', error: error.message });
-  }
-});
-
+// Nova rota para remover funcionário
+router.delete('/:projectId/employees/:employeeId', protect, projectController.removeEmployeeFromProject);
 
 module.exports = router;

@@ -1,0 +1,134 @@
+/* Modal Overlay - Fundo da Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro com transparência */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000; /* Garantir que a modal fique acima de outros elementos */
+  }
+  
+  /* Modal Content - Conteúdo da Modal */
+  .modalContent {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    width: 80%; /* Largura da modal */
+    max-width: 500px; /* Largura máxima para a modal */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra suave */
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .modalContent h2 {
+    text-align: center;
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #333; /* Cor do título */
+  }
+  
+  /* Formulário de Inputs */
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .input,
+  .select,
+  textarea {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+    outline: none;
+  }
+  
+  .input:focus,
+  .select:focus,
+  textarea:focus {
+    border-color: #007bff; /* Cor de borda ao focar */
+  }
+  
+  textarea {
+    height: 100px; /* Altura para o campo de descrição */
+  }
+  
+  /* Estilos do botão */
+  button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+  }
+  
+  button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
+  button:hover:not(:disabled) {
+    background-color: #0056b3; /* Cor de fundo ao passar o mouse */
+  }
+  
+  /* Fechar a Modal */
+  .closeButton {
+    background-color: transparent;
+    color: #007bff;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 10px;
+  }
+  
+  .closeButton:hover {
+    text-decoration: underline; /* Efeito de link ao passar o mouse */
+  }
+  
+  /* Mensagens de Sucesso ou Erro */
+  .success {
+    color: green;
+    text-align: center;
+    font-size: 1rem;
+  }
+  
+  .error {
+    color: red;
+    text-align: center;
+    font-size: 1rem;
+  }
+  
+  /* Responsividade - Ajustes para telas pequenas */
+  @media (max-width: 600px) {
+    .modalContent {
+      width: 90%;
+      padding: 15px;
+    }
+  
+    .modalContent h2 {
+      font-size: 1.2rem;
+    }
+  
+    button {
+      font-size: 0.9rem;
+    }
+  
+    .input,
+    .select,
+    textarea {
+      font-size: 0.9rem;
+    }
+  }
+  
+  
