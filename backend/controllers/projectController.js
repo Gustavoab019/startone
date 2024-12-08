@@ -107,15 +107,24 @@ exports.manageEmployees = async (req, res) => {
     const { projectId } = req.params;
     const { employeeId, role } = req.body;
 
+    if (!projectId || !employeeId || !role) {
+      return res.status(400).json({ success: false, message: 'Parâmetros insuficientes fornecidos.' });
+    }
+
     const result = await withTransaction(async (session) => {
-      const [project, employee] = await Promise.all([
-        Project.findById(projectId).session(session),
-        Employee.findById(employeeId).session(session)
-      ]);
+      // Buscar projeto e funcionário no contexto da transação
+      const project = await Project.findById(projectId).session(session);
+      const employee = await Employee.findById(employeeId).session(session);
 
-      if (!project) throw new Error('Projeto não encontrado');
-      if (!employee) throw new Error('Funcionário não encontrado');
+      if (!project) {
+        throw new Error('Projeto não encontrado.');
+      }
 
+      if (!employee) {
+        throw new Error('Funcionário não encontrado.');
+      }
+
+      // Verificar se o funcionário já está no projeto
       const existingEmployee = project.employees.find(
         (emp) => emp.employeeId.toString() === employeeId
       );
@@ -128,25 +137,31 @@ exports.manageEmployees = async (req, res) => {
           throw new Error('Funcionário já está ativo neste projeto.');
         }
       } else {
+        // Adicionar novo funcionário ao projeto
         project.employees.push({ employeeId, role, status: 'active' });
       }
 
+      // Atualizar o status e o histórico do funcionário
       employee.status = 'Em Projeto';
       employee.currentProjectId = project._id;
+
       employee.projectHistory.push({
         projectId: project._id,
         role,
-        startDate: new Date()
+        startDate: new Date(),
       });
 
+      // Salvar alterações no banco
       await Promise.all([
         project.save({ session }),
-        employee.save({ session })
+        employee.save({ session }),
       ]);
 
+      // Retornar os objetos atualizados
       return { project, employee };
     });
 
+    // Resposta de sucesso
     res.status(200).json({ success: true, ...result });
   } catch (error) {
     console.error('Erro ao gerenciar funcionários:', error);
