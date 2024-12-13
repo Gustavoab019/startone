@@ -376,5 +376,39 @@ router.delete('/:id', protect, async (req, res) => {
 });
 
 
+// Rota para buscar veículos alocados a um projeto específico (GET /api/vehicles/project/:projectId)
+router.get('/project/:projectId', protect, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // Validar se o ID do projeto é válido
+    if (!projectId) {
+      return res.status(400).json({ error: 'ID do projeto não fornecido.' });
+    }
+
+    // Buscar o projeto para verificar se existe
+    const project = await Project.findById(projectId);
+    if (!project) {
+      return res.status(404).json({ error: 'Projeto não encontrado.' });
+    }
+
+    // Buscar todos os veículos associados ao projeto
+    const vehicles = await Vehicle.find({
+      'projectAssociated._id': projectId
+    }).select('name type plate availabilityStatus'); // Selecionando apenas os campos necessários
+
+    // Se não houver veículos, retornar array vazio
+    if (!vehicles || vehicles.length === 0) {
+      return res.status(200).json([]);
+    }
+
+    res.status(200).json(vehicles);
+  } catch (error) {
+    console.error('Erro ao buscar veículos do projeto:', error);
+    res.status(500).json({ error: 'Erro ao buscar veículos do projeto. Tente novamente mais tarde.' });
+  }
+});
+
+
 module.exports = router;
 

@@ -7,6 +7,7 @@ import PortfolioSection from './components/Portfolio/PortfolioSection';
 import EvaluationsSection from './components/Evaluations/EvaluationsSection';
 import DashboardVehicles from './components/Vehicles/DashboardVehicle';
 import ManageEmployees from './components/Employees/ManageEmployees';
+import NotificationsView from './components/Notifications/NotificationsView'
 
 
 
@@ -22,6 +23,8 @@ const App = () => {
         <Route path="/evaluations" element={<EvaluationsSection />} />
         <Route path="/vehicles" element={<DashboardVehicles />} />
         <Route path="/employees" element={<ManageEmployees />} />
+        <Route path="/notifications" element={<NotificationsView />} />
+
 
 
 

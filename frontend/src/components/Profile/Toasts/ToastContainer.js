@@ -1,7 +1,9 @@
 import React from 'react';
-import { ToastContainer } from 'react-toastify';
+import { ToastContainer as ReactToastifyContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const CustomToastContainer = () => <ToastContainer autoClose={3000} />;
+const ToastContainer = () => (
+  <ReactToastifyContainer position="top-right" autoClose={3000} />
+);
 
-export default CustomToastContainer;
+export default ToastContainer;

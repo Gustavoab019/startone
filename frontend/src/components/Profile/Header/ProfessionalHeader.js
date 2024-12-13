@@ -2,6 +2,7 @@ import React from 'react';
 import { MapPin, User, Edit2, Star, BadgeCheck, Loader2 } from 'lucide-react';
 import styles from './styles.module.css';
 
+// Componente de carregamento
 const LoadingSpinner = () => (
   <div className={styles.spinnerContainer}>
     <Loader2 className={styles.spinner} />
@@ -14,25 +15,27 @@ const ProfileHeader = ({
   onFollowToggle,
   isFollowing = false,
   onShowFollowers,
-  isLoading = false
+  isLoading = false,
 }) => {
+  // Desestruturação com valores padrão para evitar erros
   const {
-    name,
-    location,
-    followersCount,
-    followingCount,
-    averageRating,
-    projectsCount,
+    name = 'Usuário sem nome',
+    location = 'Local não especificado',
+    followersCount = 0,
+    followingCount = 0,
+    averageRating = 0,
+    projectsCount = 0,
     specialties = [],
-    companyLink = {},
-    experience,
-    verified,
-    image,
+    companyLink = { companyName: 'Nenhuma empresa vinculada' },
+    experience = 0,
+    verified = false,
+    image = null,
   } = profile;
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
+        {/* Seção de perfil */}
         <div className={styles.profileSection}>
           <div className={styles.imageContainer}>
             <div className={styles.imageWrapper}>
@@ -68,7 +71,7 @@ const ProfileHeader = ({
 
           <div className={styles.mainInfo}>
             <div className={styles.nameContainer}>
-              {!name || isLoading ? (
+              {isLoading ? (
                 <LoadingSpinner />
               ) : (
                 <>
@@ -84,7 +87,7 @@ const ProfileHeader = ({
             </div>
 
             <div className={styles.locationContainer}>
-              {!location || isLoading ? (
+              {isLoading ? (
                 <LoadingSpinner />
               ) : (
                 <>
@@ -116,8 +119,9 @@ const ProfileHeader = ({
           </div>
         </div>
 
+        {/* Seção de estatísticas */}
         <div className={styles.statsSection}>
-          {!averageRating || isLoading ? (
+          {isLoading ? (
             <LoadingSpinner />
           ) : (
             <>
@@ -130,50 +134,28 @@ const ProfileHeader = ({
 
               <div className={styles.stats}>
                 <div className={styles.statItem}>
-                  {followersCount === undefined || isLoading ? (
-                    <LoadingSpinner />
-                  ) : (
-                    <>
-                      <span className={styles.statValue}>{followersCount}</span>
-                      <span className={styles.statLabel}>Seguidores</span>
-                    </>
-                  )}
+                  <span className={styles.statValue}>{followersCount}</span>
+                  <span className={styles.statLabel}>Seguidores</span>
                 </div>
                 <div className={styles.statItem}>
-                  {followingCount === undefined || isLoading ? (
-                    <LoadingSpinner />
-                  ) : (
-                    <>
-                      <span className={styles.statValue}>{followingCount}</span>
-                      <span className={styles.statLabel}>Seguindo</span>
-                    </>
-                  )}
+                  <span className={styles.statValue}>{followingCount}</span>
+                  <span className={styles.statLabel}>Seguindo</span>
                 </div>
                 <div className={styles.statItem}>
-                  {projectsCount === undefined || isLoading ? (
-                    <LoadingSpinner />
-                  ) : (
-                    <>
-                      <span className={styles.statValue}>{projectsCount}</span>
-                      <span className={styles.statLabel}>Projetos</span>
-                    </>
-                  )}
+                  <span className={styles.statValue}>{projectsCount}</span>
+                  <span className={styles.statLabel}>Projetos</span>
                 </div>
               </div>
+
               <div className={styles.companyInfo}>
-                {isLoading || !companyLink.companyName ? (
-                  <LoadingSpinner />
-                ) : (
-                  <>
-                    <span className={styles.companyName}>{companyLink.companyName}</span>
-                    <span className={styles.companyLabel}>Empresa Vinculada</span>
-                  </>
-                )}
+                <span className={styles.companyName}>{companyLink.companyName}</span>
+                <span className={styles.companyLabel}>Empresa Vinculada</span>
               </div>
             </>
           )}
         </div>
 
+        {/* Botão de seguir */}
         <button
           className={`${styles.followButton} ${
             isFollowing ? styles.following : ''
@@ -181,11 +163,7 @@ const ProfileHeader = ({
           onClick={onFollowToggle}
           disabled={isLoading}
         >
-          {isLoading ? (
-            <LoadingSpinner />
-          ) : (
-            isFollowing ? 'Seguindo' : 'Seguir'
-          )}
+          {isLoading ? <LoadingSpinner /> : isFollowing ? 'Seguindo' : 'Seguir'}
         </button>
       </header>
     </div>

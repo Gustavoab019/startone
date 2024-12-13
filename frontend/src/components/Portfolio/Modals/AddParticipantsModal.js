@@ -1,37 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import styles from './styles.module.css';
 
 const AddParticipantsModal = ({
   isOpen,
   onClose,
   onAddParticipant,
-  participants,
-  setParticipants,
-  participantMessage,
   isSubmittingParticipants,
   projects,
   selectedProject,
   setSelectedProject
 }) => {
-  // Se a modal não estiver aberta, não renderiza nada
+  const [employee, setEmployee] = useState({
+    employeeId: '',
+    role: ''
+  });
+
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (selectedProject) {
-      onAddParticipant(); // Adiciona os participantes ao projeto selecionado
-    } else {
-      console.error('No project selected!');
+    if (selectedProject && employee.employeeId && employee.role) {
+      onAddParticipant(employee);
+      setEmployee({ employeeId: '', role: '' }); // Reset form
     }
   };
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h2>Add Participants to Project</h2>
-
-        {/* Se houver mensagem de sucesso ou erro, exibe */}
-        {participantMessage && <p className={styles.success}>{participantMessage}</p>}
+        <h2>Add Employee to Project</h2>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {/* Seletor de projeto */}
@@ -52,41 +49,42 @@ const AddParticipantsModal = ({
             </select>
           </label>
 
-          {/* Campo para adicionar profissionais */}
+          {/* Campo para ID do funcionário */}
           <label>
-            Professionals (comma separated):
+            Employee ID:
             <input
               type="text"
-              placeholder="Enter professional IDs"
-              value={participants.professionals}
+              placeholder="Enter employee ID"
+              value={employee.employeeId}
               onChange={(e) =>
-                setParticipants({ ...participants, professionals: e.target.value })
+                setEmployee({ ...employee, employeeId: e.target.value })
               }
               className={styles.input}
+              required
             />
           </label>
 
-          {/* Campo para adicionar clientes */}
+          {/* Campo para função do funcionário */}
           <label>
-            Clients (comma separated):
+            Role:
             <input
               type="text"
-              placeholder="Enter client IDs"
-              value={participants.clients}
+              placeholder="Enter employee role"
+              value={employee.role}
               onChange={(e) =>
-                setParticipants({ ...participants, clients: e.target.value })
+                setEmployee({ ...employee, role: e.target.value })
               }
               className={styles.input}
+              required
             />
           </label>
 
-          {/* Botão para enviar */}
           <button
             type="submit"
             disabled={!selectedProject || isSubmittingParticipants}
             className={styles.button}
           >
-            {isSubmittingParticipants ? 'Adding...' : 'Add Participants'}
+            {isSubmittingParticipants ? 'Adding...' : 'Add Employee'}
           </button>
         </form>
 

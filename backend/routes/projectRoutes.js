@@ -28,4 +28,6 @@ router.post('/:projectId/employees', protect, projectController.manageEmployees)
 // Nova rota para remover funcionário
 router.delete('/:projectId/employees/:employeeId', protect, projectController.removeEmployeeFromProject);
 
+router.get('/:projectId/employees', protect, projectController.getProjectEmployees);
+
 module.exports = router;

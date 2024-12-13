@@ -1,48 +1,55 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import styles from './styles.module.css';
 
 const EditProjectModal = ({ project, isOpen, onClose, onEdit }) => {
   const [formData, setFormData] = useState({
-    projectTitle: project.projectTitle || '',
-    description: project.description || '',
-    status: project.status || '',
-    completionDate: project.completionDate
+    projectTitle: project?.projectTitle || '',
+    description: project?.description || '',
+    status: project?.status || 'not started',
+    completionDate: project?.completionDate
       ? new Date(project.completionDate).toISOString().substr(0, 10)
       : '',
   });
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
 
-  // Lidar com mudanças nos campos do formulário
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Lidar com envio do formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setError(null);
-
-    // Validação básica
-    if (
-      !formData.projectTitle ||
-      !formData.description ||
-      !formData.status ||
-      !formData.completionDate
-    ) {
-      setError('All fields are required.');
-      setIsSaving(false);
-      return;
-    }
-
+  
     try {
-      await onEdit({ ...project, ...formData });
-      onClose(); // Fecha o modal após sucesso
+      // Validação dos campos
+      const requiredFields = {
+        projectTitle: 'Título',
+        description: 'Descrição',
+        status: 'Status',
+        completionDate: 'Data de Conclusão'
+      };
+  
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!formData[field]?.trim()) {
+          throw new Error(`O campo ${label} é obrigatório.`);
+        }
+      }
+  
+      // Formatar data corretamente
+      const formattedData = {
+        ...formData,
+        completionDate: new Date(formData.completionDate).toISOString()
+      };
+  
+      await onEdit(project._id, formattedData);
+      onClose();
     } catch (err) {
-      console.error('Error while updating the project:', err);
-      setError('Failed to update the project. Please try again.');
+      console.error('Erro ao atualizar o projeto:', err);
+      setError(err.message || 'Falha ao atualizar o projeto. Por favor, tente novamente.');
     } finally {
       setIsSaving(false);
     }
@@ -50,14 +57,14 @@ const EditProjectModal = ({ project, isOpen, onClose, onEdit }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className={styles.modal}>
+  return ReactDOM.createPortal(
+    <div className={styles.modalOverlay}>
       <div className={styles.modalContent}>
-        <h3>Edit Project</h3>
+        <h3>Editar Projeto</h3>
         {error && <p className={styles.errorMessage}>{error}</p>}
         <form onSubmit={handleSubmit}>
           <label>
-            Title:
+            Título:
             <input
               type="text"
               name="projectTitle"
@@ -67,7 +74,7 @@ const EditProjectModal = ({ project, isOpen, onClose, onEdit }) => {
             />
           </label>
           <label>
-            Description:
+            Descrição:
             <textarea
               name="description"
               value={formData.description}
@@ -83,14 +90,14 @@ const EditProjectModal = ({ project, isOpen, onClose, onEdit }) => {
               onChange={handleChange}
               required
             >
-              <option value="not started">Not Started</option>
-              <option value="in progress">In Progress</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="not started">Não Iniciado</option>
+              <option value="in progress">Em Andamento</option>
+              <option value="completed">Concluído</option>
+              <option value="cancelled">Cancelado</option>
             </select>
           </label>
           <label>
-            Completion Date:
+            Data de Conclusão:
             <input
               type="date"
               name="completionDate"
@@ -105,19 +112,20 @@ const EditProjectModal = ({ project, isOpen, onClose, onEdit }) => {
               className={styles.saveButton}
               disabled={isSaving}
             >
-              {isSaving ? 'Saving...' : 'Save'}
+              {isSaving ? 'Salvando...' : 'Salvar'}
             </button>
             <button
               type="button"
               className={styles.cancelButton}
               onClick={onClose}
             >
-              Cancel
+              Cancelar
             </button>
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

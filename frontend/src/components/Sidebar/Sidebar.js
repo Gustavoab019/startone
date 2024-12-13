@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaCertificate, FaProjectDiagram, FaStar, FaComments, FaUser, FaSearch, FaTachometerAlt, FaUsers, FaCar } from 'react-icons/fa';
+import { FaCertificate, FaProjectDiagram, FaStar, FaComments, FaUser, FaSearch, FaTachometerAlt, FaUsers, FaCar, FaBell } from 'react-icons/fa';
 import styles from './styles.module.css'; // Importa o CSS Module
 
 const Sidebar = ({ setSection, handleLogout }) => {
@@ -91,6 +91,13 @@ const Sidebar = ({ setSection, handleLogout }) => {
             >
               <FaCar className={styles.icon} />
               Vehicles
+            </li>
+            <li
+              className={`${styles.menuItem} ${activeSection === 'notifications' ? styles.active : ''}`}
+              onClick={() => handleSectionClick('notifications')}
+            >
+              <FaBell className={styles.icon} />
+              Notifications
             </li>
           </ul>
         </nav>

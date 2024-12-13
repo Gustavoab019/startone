@@ -11,6 +11,8 @@ import SearchUsersSection from '../Professional/SearchUsersSection';
 import Dashboard from '../Dashboard/Dashboard';
 import ManageEmployees from '../Employees/ManageEmployees';
 import DashboardVehicle from '../Vehicles/DashboardVehicle'
+import NotificationsView from '../Notifications/NotificationsView'
+
 
 const DashboardLayout = () => {
   const [profile, setProfile] = useState({
@@ -213,7 +215,7 @@ const DashboardLayout = () => {
         {section === 'search' && <SearchUsersSection/>}
         {section === 'employees' && <ManageEmployees/>}
         {section === 'vehicles' && <DashboardVehicle/>}
-
+        {section === 'notifications' && <NotificationsView/>}
         
       </main>
     </div>
