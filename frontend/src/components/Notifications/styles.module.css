@@ -1,0 +1,195 @@
+.notificationsPage {
+    padding: 1.25rem;
+    background-color: #f9f9f9;
+  }
+  
+  .notificationsTitle {
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  
+  .notificationList {
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+  
+  .notificationItem {
+    padding: 0.9375rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #ffffff;
+    transition: background-color 0.3s;
+  }
+  
+  .notificationContent {
+    margin-bottom: 0.625rem;
+  }
+  
+  .notificationItem.unread {
+    background-color: #eaf4ff;
+  }
+  
+  .notificationItem.read {
+    background-color: #ffffff;
+  }
+  
+  .notificationMessage {
+    margin: 0;
+    font-size: 1rem;
+  }
+  
+  .notificationDate {
+    display: block;
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 0.3125rem;
+  }
+  
+  .notificationActions {
+    display: flex;
+    gap: 0.625rem;
+  }
+  
+  .markAsReadButton,
+  .acceptButton,
+  .rejectButton {
+    padding: 0.5rem 0.9375rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: opacity 0.3s;
+  }
+  
+  .markAsReadButton {
+    background-color: #2196f3;
+    color: white;
+  }
+  
+  .acceptButton {
+    background-color: #4caf50;
+    color: white;
+  }
+  
+  .rejectButton {
+    background-color: #f44336;
+    color: white;
+  }
+  
+  .markAsReadButton:hover,
+  .acceptButton:hover,
+  .rejectButton:hover {
+    opacity: 0.9;
+  }
+  
+  .responseButtons {
+    display: flex;
+    gap: 0.625rem;
+  }
+
+  /* styles.module.css (adicionar ao arquivo existente) */
+.responseStatus {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+.accepted {
+  background-color: #e6ffe6;
+  color: #006600;
+}
+
+.rejected {
+  background-color: #ffe6e6;
+  color: #cc0000;
+}
+
+.responseButtons button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Adicionar ao styles.module.css */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.refreshButton {
+  padding: 0.5rem 1rem;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+
+.refreshButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.badge {
+  background-color: #f44336;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+}
+
+.notificationGroup {
+  margin-bottom: 1.25rem;
+}
+
+.dateHeader {
+  font-size: 0.875rem;
+  color: #666;
+  padding: 0.5rem 0;
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.loadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 1rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background-color: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}

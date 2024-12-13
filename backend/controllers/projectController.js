@@ -1,4 +1,5 @@
 const Project = require('../models/projectModel.js');
+const Notification = require("../models/NotificationModel");
 const User = require('../models/userModel');
 const Vehicle = require('../models/VehicleModel');
 const Employee = require('../models/EmployeeModel');
@@ -9,13 +10,51 @@ const { withTransaction } = require('../utils/mongooseUtils');
 exports.getMyProjects = async (req, res) => {
   try {
     const userId = req.user._id;
-    const projects = await Project.find({ createdById: userId });
 
-    if (!projects || projects.length === 0) {
-      return res.status(200).json([]);
-    }
+    // Buscar projetos onde o usuário é o criador
+    const createdProjects = await Project.find({ createdById: userId })
+      .select('projectTitle description completionDate status employees')
+      .lean();
 
-    res.status(200).json(projects);
+    // Buscar projetos onde o usuário está como funcionário
+    const involvedProjects = await Project.find({ 'employees.userId': userId })
+      .select('projectTitle description completionDate status employees')
+      .lean();
+
+    // Formatando os projetos criados
+    const formattedCreatedProjects = createdProjects.map((project) => ({
+      _id: project._id,
+      projectTitle: project.projectTitle,
+      description: project.description,
+      completionDate: project.completionDate,
+      status: project.status,
+      role: 'Creator',
+      employees: [], // Criadores não aparecem como funcionários
+    }));
+
+    // Formatando os projetos em que o usuário é um funcionário
+    const formattedInvolvedProjects = involvedProjects.map((project) => ({
+      _id: project._id,
+      projectTitle: project.projectTitle,
+      description: project.description,
+      completionDate: project.completionDate,
+      status: project.status,
+      role: project.employees
+        .filter((emp) => emp.userId && emp.userId.toString() === userId.toString())
+        .map((emp) => emp.role)
+        .join(', '),
+      employees: project.employees
+        .filter((emp) => emp.userId && emp.userId.toString() === userId.toString())
+        .map((emp) => ({
+          role: emp.role,
+          status: emp.status,
+        })),
+    }));
+
+    // Combinar ambos os conjuntos de projetos
+    const allProjects = [...formattedCreatedProjects, ...formattedInvolvedProjects];
+
+    res.status(200).json(allProjects);
   } catch (error) {
     console.error('Error fetching projects:', error);
     res.status(500).json({ message: 'Error fetching projects.' });
@@ -112,19 +151,12 @@ exports.manageEmployees = async (req, res) => {
     }
 
     const result = await withTransaction(async (session) => {
-      // Buscar projeto e funcionário no contexto da transação
       const project = await Project.findById(projectId).session(session);
       const employee = await Employee.findById(employeeId).session(session);
 
-      if (!project) {
-        throw new Error('Projeto não encontrado.');
-      }
+      if (!project) throw new Error('Projeto não encontrado.');
+      if (!employee) throw new Error('Funcionário não encontrado.');
 
-      if (!employee) {
-        throw new Error('Funcionário não encontrado.');
-      }
-
-      // Verificar se o funcionário já está no projeto
       const existingEmployee = project.employees.find(
         (emp) => emp.employeeId.toString() === employeeId
       );
@@ -133,15 +165,32 @@ exports.manageEmployees = async (req, res) => {
         if (existingEmployee.status === 'inactive') {
           existingEmployee.status = 'active';
           existingEmployee.role = role;
+          existingEmployee.userId = employee.userId; // Atualiza o userId do funcionário
+          await Notification.create({
+            userId: employee.userId,
+            type: "important",
+            message: `Você foi reativado no projeto '${project.projectTitle}' com a função '${role}'.`,
+            relatedEntity: { entityId: project._id, entityType: "project" },
+          });
         } else {
           throw new Error('Funcionário já está ativo neste projeto.');
         }
       } else {
-        // Adicionar novo funcionário ao projeto
-        project.employees.push({ employeeId, role, status: 'active' });
+        project.employees.push({
+          employeeId,
+          userId: employee.userId, // Adiciona o userId do funcionário
+          role,
+          status: 'active'
+        });
+
+        await Notification.create({
+          userId: employee.userId,
+          type: "important",
+          message: `Você foi alocado ao projeto '${project.projectTitle}' com a função '${role}'.`,
+          relatedEntity: { entityId: project._id, entityType: "project" },
+        });
       }
 
-      // Atualizar o status e o histórico do funcionário
       employee.status = 'Em Projeto';
       employee.currentProjectId = project._id;
 
@@ -151,17 +200,11 @@ exports.manageEmployees = async (req, res) => {
         startDate: new Date(),
       });
 
-      // Salvar alterações no banco
-      await Promise.all([
-        project.save({ session }),
-        employee.save({ session }),
-      ]);
+      await Promise.all([project.save({ session }), employee.save({ session })]);
 
-      // Retornar os objetos atualizados
       return { project, employee };
     });
 
-    // Resposta de sucesso
     res.status(200).json({ success: true, ...result });
   } catch (error) {
     console.error('Erro ao gerenciar funcionários:', error);
@@ -169,28 +212,10 @@ exports.manageEmployees = async (req, res) => {
   }
 };
 
-
 // Demais funções mantidas iguais
 exports.getProjectsByUserId = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-
-    const projects = await Project.find({
-      $or: [
-        { createdById: user._id },
-        { professionals: user._id },
-        { participants: user._id },
-        { 'employees.employeeId': user._id }
-      ]
-    });
-
-    res.status(200).json(projects || []);
-  } catch (error) {
-    res.status(500).json({ message: 'Erro ao buscar projetos.' });
-  }
 };
+
 
 // Função para alterar o status do progresso de um projeto
 exports.updateProjectStatus = async (req, res) => {
@@ -297,6 +322,7 @@ exports.removeEmployeeFromProject = async (req, res) => {
       throw new Error('Funcionário não está associado a este projeto.');
     }
 
+    const previousRole = employeeInProject.role;
     employeeInProject.status = 'inactive';
 
     employee.status = 'Disponível';
@@ -307,6 +333,19 @@ exports.removeEmployeeFromProject = async (req, res) => {
       (h) => h.projectId.toString() === projectId && !h.endDate
     );
     if (history) history.endDate = new Date();
+
+    // Criar notificação apenas se o employee.userId existir
+    if (employee.userId) {
+      await Notification.create([{
+        userId: employee.userId,
+        type: "important",
+        message: `Você foi removido do projeto '${project.projectTitle}' onde atuava como '${previousRole}'.`,
+        relatedEntity: { 
+          entityId: project._id, 
+          entityType: "project" 
+        }
+      }], { session }); // Note o uso de array e a passagem da session como opção
+    }
 
     await project.save({ session });
     await employee.save({ session });
@@ -324,4 +363,57 @@ exports.removeEmployeeFromProject = async (req, res) => {
 };
 
 
+//Get employees of projects
+exports.getProjectEmployees = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
+  try {
+    const { projectId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(projectId)) {
+      return res.status(400).json({ message: 'ID do projeto inválido' });
+    }
+
+    const project = await Project.findById(projectId)
+      .populate({
+        path: 'employees.employeeId',
+        select: 'userId position status',
+        populate: {
+          path: 'userId',
+          select: 'name email'
+        }
+      })
+      .session(session);
+
+    if (!project) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: 'Projeto não encontrado' });
+    }
+
+    // Filtrar apenas funcionários ativos e formatar a resposta
+    const activeEmployees = project.employees
+      .filter(emp => emp.status === 'active')
+      .map(emp => ({
+        _id: emp.employeeId._id,
+        userName: emp.employeeId.userId.name,
+        userEmail: emp.employeeId.userId.email,
+        position: emp.employeeId.position,
+        role: emp.role,
+        status: emp.status
+      }));
+
+    await session.commitTransaction();
+    res.status(200).json(activeEmployees);
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Erro ao buscar funcionários do projeto:', error);
+    res.status(500).json({ 
+      message: 'Erro ao carregar funcionários do projeto',
+      error: error.message 
+    });
+  } finally {
+    session.endSession();
+  }
+};

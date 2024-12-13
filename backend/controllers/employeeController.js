@@ -3,82 +3,13 @@ const Employee = require('../models/EmployeeModel');
 const ProfessionalProfile = require('../models/ProfessionalProfileModel');
 const User = require('../models/userModel');
 const mongoose = require('mongoose');
+const EmployeeInvitation = require('../models/EmployeeInvitationModel');
+const Notification = require('../models/notificationModel');
 
 
 // Função auxiliar para validar IDs do MongoDB
 const validateMongoIds = (...ids) => {
   return ids.every(id => mongoose.Types.ObjectId.isValid(id));
-};
-
-// Controller para vincular profissional à empresa
-const linkProfessionalToCompany = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { professionalEmail } = req.body;
-
-    // Buscar o perfil da empresa usando o userId do usuário autenticado
-    const companyProfile = await CompanyProfile.findOne({ userId: req.user._id }).session(session);
-    if (!companyProfile) {
-      throw new Error('Perfil da empresa não encontrado.');
-    }
-
-    const companyId = companyProfile._id;
-
-    // Buscar usuário pelo email
-    const user = await User.findOne({ email: professionalEmail }).session(session);
-    if (!user) {
-      throw new Error('Profissional não encontrado com o email fornecido.');
-    }
-
-    const professionalProfile = await ProfessionalProfile.findOne({ userId: user._id }).session(session);
-    if (!professionalProfile) {
-      throw new Error('Perfil profissional não encontrado.');
-    }
-
-    let employee = await Employee.findOne({ userId: user._id }).session(session);
-
-    if (!employee) {
-      employee = new Employee({
-        userId: user._id,
-        position: professionalProfile.specialties[0] || 'Não especificado',
-        status: 'Disponível',
-        companyId: companyId,
-      });
-    } else {
-      if (employee.companyId?.toString() === companyId.toString()) {
-        throw new Error('Profissional já vinculado a esta empresa.');
-      }
-      employee.companyId = companyId;
-    }
-
-    professionalProfile.companyId = companyId;
-
-    await employee.save({ session });
-    await professionalProfile.save({ session });
-
-    await session.commitTransaction();
-
-    res.status(201).json({
-      message: 'Profissional vinculado à empresa com sucesso.',
-      employee: {
-        ...employee.toObject(),
-        userName: user.name,
-        userEmail: user.email,
-        specialties: professionalProfile.specialties
-      }
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    console.error('Erro ao vincular profissional:', error);
-    res.status(error.message.includes('não') ? 404 : 500).json({
-      error: error.message || 'Erro ao vincular profissional. Tente novamente mais tarde.'
-    });
-  } finally {
-    session.endSession();
-  }
 };
 
 // Controller para desvincular profissional da empresa
@@ -304,10 +235,245 @@ const getCurrentProjectDetails = async (req, res) => {
   }
 };
 
+// Função para enviar convite ao profissional
+const inviteProfessionalToCompany = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+ 
+  try {
+    const { professionalEmail, position } = req.body;
+ 
+    // Validar posição conforme enum do EmployeeModel
+    if (!position) {
+      throw new Error('A posição é obrigatória.');
+    }
+ 
+    // Buscar o perfil da empresa
+    const companyProfile = await CompanyProfile.findOne({ userId: req.user._id }).session(session);
+    if (!companyProfile) {
+      throw new Error('Perfil da empresa não encontrado.');
+    }
+ 
+    // Buscar usuário profissional pelo email
+    const professionalUser = await User.findOne({ email: professionalEmail }).session(session);
+    if (!professionalUser) {
+      throw new Error('Profissional não encontrado com o email fornecido.');
+    }
+ 
+    // Verificar se o profissional já está vinculado a alguma empresa
+    const existingEmployee = await Employee.findOne({ 
+      userId: professionalUser._id,
+      companyId: { $ne: null }
+    }).session(session);
+ 
+    if (existingEmployee) {
+      throw new Error('Profissional já está vinculado a uma empresa.');
+    }
+ 
+    // Verificar se já existe um convite pendente
+    const existingInvitation = await EmployeeInvitation.findOne({
+      professionalId: professionalUser._id,
+      companyId: companyProfile._id,
+      status: 'pending'
+    }).session(session);
+ 
+    if (existingInvitation) {
+      throw new Error('Já existe um convite pendente para este profissional.');
+    }
+ 
+    // Criar novo convite
+    const invitation = new EmployeeInvitation({
+      professionalId: professionalUser._id,
+      companyId: companyProfile._id,
+      position: position,
+      status: 'pending',
+      invitedAt: new Date()
+    });
+ 
+    await invitation.save({ session });
+ 
+    // Criar notificação para o profissional
+    const notification = await Notification.create([{
+      userId: professionalUser._id,
+      type: 'invitation',
+      invitationStatus: 'pending',
+      message: `A empresa ${companyProfile.companyName} convidou você para fazer parte de sua equipe como ${position}.`,
+      relatedEntity: {
+        entityId: invitation._id,
+        entityType: 'invitation'
+      },
+      isRead: false
+    }], { session });
+ 
+    // Atualizar o convite com o ID da notificação
+    invitation.notificationId = notification[0]._id;
+    await invitation.save({ session });
+ 
+    await session.commitTransaction();
+ 
+    res.status(201).json({
+      message: 'Convite enviado com sucesso.',
+      data: {
+        invitation,
+        notification: notification[0]
+      }
+    });
+ 
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Erro ao enviar convite:', error);
+    res.status(error.message.includes('não') ? 404 : 500).json({
+      error: error.message || 'Erro ao enviar convite. Tente novamente mais tarde.'
+    });
+  } finally {
+    session.endSession();
+  }
+ };
+
+// Função para aceitar/rejeitar convite
+const respondToInvitation = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { invitationId } = req.params;
+    const { response } = req.body; // 'accept' ou 'reject'
+
+    const invitation = await EmployeeInvitation.findById(invitationId)
+      .session(session);
+
+    if (!invitation || invitation.status !== 'pending') {
+      throw new Error('Convite não encontrado ou já respondido.');
+    }
+
+    // Verificar se o profissional que está respondendo é o mesmo que recebeu o convite
+    if (invitation.professionalId.toString() !== req.user._id.toString()) {
+      throw new Error('Você não tem permissão para responder este convite.');
+    }
+
+    invitation.status = response === 'accept' ? 'accepted' : 'rejected';
+    invitation.respondedAt = new Date();
+
+    if (response === 'accept') {
+      // Verificar novamente se o profissional já não está vinculado a outra empresa
+      const existingEmployee = await Employee.findOne({ 
+        userId: req.user._id,
+        companyId: { $ne: null }
+      }).session(session);
+
+      if (existingEmployee) {
+        throw new Error('Você já está vinculado a uma empresa.');
+      }
+
+      // Criar ou atualizar employee usando o modelo existente
+      let employee = await Employee.findOne({ userId: req.user._id }).session(session);
+      const professionalProfile = await ProfessionalProfile.findOne({ userId: req.user._id }).session(session);
+
+      if (!employee) {
+        employee = new Employee({
+          userId: req.user._id,
+          companyId: invitation.companyId,
+          position: invitation.position,
+          status: 'Disponível', // Usando o enum definido no modelo
+          projectHistory: [] // Inicializando o histórico vazio
+        });
+      } else {
+        employee.position = invitation.position;
+        employee.companyId = invitation.companyId;
+        employee.status = 'Disponível';
+      }
+
+      if (professionalProfile) {
+        professionalProfile.companyId = invitation.companyId;
+        await professionalProfile.save({ session });
+      }
+
+      await employee.save({ session });
+
+      // Notificar empresa sobre aceitação
+      const company = await CompanyProfile.findById(invitation.companyId).session(session);
+      await Notification.create([{
+        userId: company.userId,
+        type: 'important',
+        message: `O profissional aceitou seu convite e agora faz parte da sua equipe como ${invitation.position}.`,
+        relatedEntity: {
+          entityId: employee._id,
+          entityType: 'employee'
+        }
+      }], { session });
+    }
+
+    await invitation.save({ session });
+    await session.commitTransaction();
+
+    res.status(200).json({
+      message: response === 'accept' ? 'Convite aceito com sucesso.' : 'Convite rejeitado com sucesso.',
+      invitation
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Erro ao responder convite:', error);
+    res.status(error.message.includes('não') ? 404 : 500).json({
+      error: error.message || 'Erro ao responder convite. Tente novamente mais tarde.'
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+const getInvitations = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { status } = req.query;
+    const userType = req.user.type;
+    let query = {};
+
+    // Filtrar com base no tipo de usuário
+    if (userType === 'professional') {
+      query.professionalId = req.user._id;
+    } else if (userType === 'company') {
+      const companyProfile = await CompanyProfile.findOne({ userId: req.user._id }).session(session);
+      if (!companyProfile) {
+        throw new Error('Perfil da empresa não encontrado.');
+      }
+      query.companyId = companyProfile._id;
+    }
+
+    // Filtrar por status se fornecido
+    if (status) {
+      query.status = status;
+    }
+
+    const invitations = await EmployeeInvitation.find(query)
+      .populate('professionalId', 'name email')
+      .populate('companyId', 'companyName')
+      .sort({ createdAt: -1 })
+      .session(session);
+
+    await session.commitTransaction();
+
+    res.status(200).json(invitations);
+
+  } catch (error) {
+    await session.abortTransaction();
+    console.error('Erro ao buscar convites:', error);
+    res.status(error.message.includes('não') ? 404 : 500).json({
+      error: error.message || 'Erro ao buscar convites. Tente novamente mais tarde.'
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
 module.exports = {
-  linkProfessionalToCompany,
   unlinkProfessionalFromCompany,
   getCompanyEmployees,
   updateEmployeeData,
-  getCurrentProjectDetails
+  getCurrentProjectDetails,
+  inviteProfessionalToCompany,
+  respondToInvitation,
+  getInvitations
 };

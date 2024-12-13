@@ -77,27 +77,37 @@ const ManageEmployees = () => {
     };
   }, [fetchEmployees]);
 
-  const handleAddEmployee = async (professionalEmail) => {
+  const handleAddEmployee = async (professionalEmail, position) => {
     if (!professionalEmail) {
       setError("Email profissional é obrigatório");
       return;
     }
+   
+    if (!position) {
+      setError("Cargo é obrigatório");
+      return;
+    }
+   
     setActionLoading(true);
     try {
       await axios.post(
-        "/api/employee/link-professional",
-        { professionalEmail },
+        "/api/employee/invite", 
+        { 
+          professionalEmail,
+          position 
+        },
         getAuthConfig()
       );
+   
       await fetchEmployees();
       setIsAddModalOpen(false);
-      showSuccess("Funcionário adicionado com sucesso");
+      showSuccess("Convite enviado com sucesso");
     } catch (err) {
-      setError(err.response?.data?.error || "Erro ao vincular profissional");
+      setError(err.response?.data?.error || "Erro ao enviar convite para o profissional");
     } finally {
       setActionLoading(false);
     }
-  };
+   };
 
   const handleAssignProject = async (employeeId, projectId, role) => {
     if (!employeeId || !projectId || !role) {
@@ -220,6 +230,11 @@ const ManageEmployees = () => {
   if (isLoading) {
     return <div className={styles.loading}>Carregando funcionários...</div>;
   }
+
+  // Adicione este console.log antes do return do componente
+    console.log("Dados brutos:", employees);
+    console.log("Status counts:", statusCounts);
+    console.log("Funcionários em projeto:", employees.filter(emp => emp.status === "Em Projeto").length);
 
   return (
     <div className={styles.container}>

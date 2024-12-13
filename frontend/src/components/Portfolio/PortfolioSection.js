@@ -39,7 +39,9 @@ const PortfolioSection = ({ onProjectCount }) => {
           'Content-Type': 'application/json',
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch projects');
+      
+      if (!response.ok) throw new Error('Falha ao carregar projetos');
+      
       const data = await response.json();
       setProjects(data);
 
@@ -49,7 +51,8 @@ const PortfolioSection = ({ onProjectCount }) => {
 
       setFetchError(null);
     } catch (error) {
-      setFetchError(error.message);
+      console.error('Erro ao carregar projetos:', error);
+      setFetchError('Erro ao carregar projetos. Por favor, tente novamente.');
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +73,9 @@ const PortfolioSection = ({ onProjectCount }) => {
         },
         body: JSON.stringify(projectData),
       });
-      if (!response.ok) throw new Error('Failed to add project');
+
+      if (!response.ok) throw new Error('Falha ao adicionar projeto');
+
       const data = await response.json();
       setProjects((prev) => [...prev, data]);
 
@@ -79,75 +84,90 @@ const PortfolioSection = ({ onProjectCount }) => {
       }
 
       setNewProject({ projectTitle: '', description: '', completionDate: '' });
+      setIsAddProjectModalOpen(false);
     } catch (error) {
-      console.error('Error adding project:', error);
+      console.error('Erro ao adicionar projeto:', error);
+      setFetchError('Erro ao adicionar projeto. Por favor, tente novamente.');
     }
   };
 
   const addParticipants = async () => {
     if (!participants.professionals && !participants.clients) {
-      setParticipantMessage('Please provide at least one professional or client.');
+      setParticipantMessage('Por favor, forneça pelo menos um profissional ou cliente.');
       return;
     }
 
     setIsSubmittingParticipants(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${selectedProject}/add-participants`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          professionals: participants.professionals.split(',').map((id) => id.trim()),
-          clients: participants.clients.split(',').map((id) => id.trim()),
-        }),
-      });
-      if (!response.ok) throw new Error('Failed to add participants');
-      setParticipantMessage('Participants added successfully!');
-      setParticipants({ professionals: '', clients: '' });
-    } catch (error) {
-      setParticipantMessage('Error adding participants');
-    } finally {
-      setIsSubmittingParticipants(false);
-    }
-  };
-
-  const updateProject = async (updatedProject) => {
-    try {
-      const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://localhost:5000/api/projects/${updatedProject._id}`,
+        `http://localhost:5000/api/projects/${selectedProject}/add-participants`,
         {
           method: 'PUT',
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(updatedProject),
+          body: JSON.stringify({
+            professionals: participants.professionals.split(',').map((id) => id.trim()),
+            clients: participants.clients.split(',').map((id) => id.trim()),
+          }),
         }
       );
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Response Error:', errorData);
-        throw new Error('Failed to update project');
-      }
-  
-      const data = await response.json();
-      
-      setProjects((prevProjects) =>
-        prevProjects.map((project) =>
-          project._id === updatedProject._id ? data.project : project
-        )
-      );
-      return data.project;
+
+      if (!response.ok) throw new Error('Falha ao adicionar participantes');
+
+      setParticipantMessage('Participantes adicionados com sucesso!');
+      setParticipants({ professionals: '', clients: '' });
+      await fetchProjects(); // Recarrega os projetos para atualizar a lista
     } catch (error) {
-      console.error('Error updating project:', error);
-      throw error;
+      console.error('Erro ao adicionar participantes:', error);
+      setParticipantMessage('Erro ao adicionar participantes. Por favor, tente novamente.');
+    } finally {
+      setIsSubmittingParticipants(false);
     }
   };
+
+  const updateProject = async (projectId, updatedProject) => {
+    try {
+      setProjects((prevProjects) =>
+        prevProjects.map((project) =>
+          project._id === projectId ? updatedProject : project
+        )
+      );
+      await fetchProjects(); // Recarrega os projetos para garantir sincronização
+    } catch (error) {
+      console.error('Erro ao atualizar projeto:', error);
+      setFetchError('Erro ao atualizar projeto. Por favor, tente novamente.');
+    }
+  };
+
+  const deleteProject = async (projectId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error('Falha ao remover projeto');
+
+      setProjects((prev) => prev.filter(project => project._id !== projectId));
+      
+      if (onProjectCount) {
+        onProjectCount(projects.length - 1);
+      }
+    } catch (error) {
+      console.error('Erro ao remover projeto:', error);
+      setFetchError('Erro ao remover projeto. Por favor, tente novamente.');
+    }
+  };
+
+  const createdProjects = projects.filter((p) => p.role === 'Creator');
+  const involvedProjects = projects.filter((p) => p.role !== 'Creator');
 
   return (
     <div className={styles.section}>
@@ -167,14 +187,22 @@ const PortfolioSection = ({ onProjectCount }) => {
         </button>
       </div>
 
-      <div className={styles.statsCard}>
-        <div className={styles.statsLabel}>Em Andamento</div>
-        <div className={styles.statsValue}>{projects.length} projetos</div>
+      <div className={styles.statsContainer}>
+        <div className={styles.statsCard}>
+          <div className={styles.statsLabel}>Criados</div>
+          <div className={styles.statsValue}>{createdProjects.length} projetos</div>
+        </div>
+        <div className={styles.statsCard}>
+          <div className={styles.statsLabel}>Envolvido</div>
+          <div className={styles.statsValue}>{involvedProjects.length} projetos</div>
+        </div>
       </div>
 
       {fetchError && <p className={styles.error}>{fetchError}</p>}
+      {participantMessage && <p className={styles.message}>{participantMessage}</p>}
+      
       {isLoading ? (
-        <p>Loading projects...</p>
+        <p className={styles.loadingText}>Carregando projetos...</p>
       ) : (
         <div className={styles.tableContainer}>
           <table className={styles.table}>
@@ -184,6 +212,7 @@ const PortfolioSection = ({ onProjectCount }) => {
                 <th>Funcionários</th>
                 <th>Status</th>
                 <th>Data Prevista</th>
+                <th>Veículos</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -193,7 +222,8 @@ const PortfolioSection = ({ onProjectCount }) => {
                   key={project._id}
                   project={project}
                   setSelectedProject={setSelectedProject}
-                  onEdit={updateProject}
+                  onUpdateProject={updateProject}
+                  onDeleteProject={deleteProject}
                 />
               ))}
             </tbody>
